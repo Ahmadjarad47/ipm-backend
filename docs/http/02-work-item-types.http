@@ -1,0 +1,177 @@
+### الجزء 02: إعدادات الأنواع (أنواع العمل، الحقول المخصصة، التسلسل الهرمي، أنواع الروابط)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### القراءة مفتوحة لأي مستخدم مسجّل. التعديل: workitem.types.manage للنوع والأبناء، workitem.fields.manage للحقول، workitem.relationtypes.manage لأنواع الروابط.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### ─── أنواع العمل ─────────────────────────────
+
+### كل الأنواع بحقولها وأبنائها المسموحين، بترتيب order. active=true للمفعّلة فقط
+# @name types
+GET {{api}}/work-item-types
+Authorization: Bearer {{token}}
+
+###
+@featureId = {{types.response.body.$[?(@.key=='feature')].id}}
+@bugId = {{types.response.body.$[?(@.key=='bug')].id}}
+@subtaskId = {{types.response.body.$[?(@.key=='subtask')].id}}
+
+### نوع واحد وبيرجّع ETag
+# @name type
+GET {{api}}/work-item-types/{{featureId}}
+Authorization: Bearer {{token}}
+
+### إنشاء نوع: المفتاح بيتحوّل لأحرف صغيرة وما بيتغيّر بعدين. icon: feature task bug subtask milestone epic story
+# @name createdType
+POST {{api}}/work-item-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "key": "risk",
+  "name": "مخاطرة",
+  "description": "خطر يهدد التسليم",
+  "color": "#d35400",
+  "icon": "epic",
+  "order": 6
+}
+
+###
+@typeId = {{createdType.response.body.$.id}}
+@typeEtag = {{createdType.response.headers.ETag}}
+
+### تعديل بيانات النوع وتفعيله أو تعطيله (If-Match). order و active إذا انحذفوا بيضلوا متل ما هنّ. الأنواع ما بتنحذف
+# @name updatedType
+PUT {{api}}/work-item-types/{{typeId}}
+Authorization: Bearer {{token}}
+If-Match: {{typeEtag}}
+Content-Type: application/json
+
+{ "name": "مخاطرة (محدّث)", "description": "خطر يهدد التسليم", "color": "#d35400", "icon": "epic", "order": 6, "active": true }
+
+###
+@typeEtag2 = {{updatedType.response.headers.ETag}}
+
+### الحقول المخصصة (If-Match، workitem.fields.manage): القائمة الكاملة، حتى 40 حقل. type: text number date boolean select user
+# @name fields
+PUT {{api}}/work-item-types/{{typeId}}/fields
+Authorization: Bearer {{token}}
+If-Match: {{typeEtag2}}
+Content-Type: application/json
+
+{
+  "fields": [
+    {
+      "key": "probability",
+      "label": "الاحتمال",
+      "type": "select",
+      "required": true,
+      "options": [{ "value": "high", "label": "عالٍ" }, { "value": "low", "label": "منخفض" }],
+      "showInList": true,
+      "showOnCard": true,
+      "order": 0
+    },
+    { "key": "impact_days", "label": "الأثر (أيام)", "type": "number", "required": false, "min": 0, "max": 365, "hint": "عدد أيام التأخير المتوقع", "order": 1 }
+  ]
+}
+
+###
+@typeEtag3 = {{fields.response.headers.ETag}}
+
+### الأنواع الفرعية المسموحة (If-Match): القائمة الكاملة، ومسموح النوع نفسه
+PUT {{api}}/work-item-types/{{typeId}}/children
+Authorization: Bearer {{token}}
+If-Match: {{typeEtag3}}
+Content-Type: application/json
+
+{ "childTypeIds": ["{{subtaskId}}", "{{typeId}}"] }
+
+### قواعد التسلسل الهرمي كأزواج (أب، ابن) لرسم المصفوفة
+GET {{api}}/hierarchy-rules
+Authorization: Bearer {{token}}
+
+### سجل تعديل النوع (workitem.types.manage): الأحدث أولاً، قبل وبعد لكل تعديل
+GET {{api}}/work-item-types/{{typeId}}/history?page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### ─── أنواع الروابط ───────────────────────────
+
+### كل أنواع الروابط. أزواج الأنواع الفاضية تعني أي نوع
+# @name relations
+GET {{api}}/relation-types
+Authorization: Bearer {{token}}
+
+###
+@blocksId = {{relations.response.body.$[?(@.key=='blocks')].id}}
+
+### نوع رابط واحد وبيرجّع ETag
+GET {{api}}/relation-types/{{blocksId}}
+Authorization: Bearer {{token}}
+
+### إنشاء نوع رابط موجّه بأزواج أنواع مسموحة (ميزة ← خطأ فقط)
+# @name createdRelation
+POST {{api}}/relation-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "key": "caused_by",
+  "name": "ناتج عن",
+  "inverseName": "يسبّب",
+  "directed": true,
+  "acyclic": true,
+  "allowedPairs": [{ "sourceTypeId": "{{bugId}}", "targetTypeId": "{{featureId}}" }]
+}
+
+###
+@relationId = {{createdRelation.response.body.$.id}}
+@relationEtag = {{createdRelation.response.headers.ETag}}
+
+### تعديل نوع الرابط (If-Match): المفتاح ثابت. غير الموجّه لازم اسمه العكسي = اسمه ولا يمنع الحلقات
+# @name updatedRelation
+PUT {{api}}/relation-types/{{relationId}}
+Authorization: Bearer {{token}}
+If-Match: {{relationEtag}}
+Content-Type: application/json
+
+{ "name": "ناتج عن", "inverseName": "يسبّب", "directed": true, "acyclic": true, "active": true, "allowedPairs": [] }
+
+### سجل تعديل نوع الرابط (workitem.relationtypes.manage)
+GET {{api}}/relation-types/{{relationId}}/history
+Authorization: Bearer {{token}}
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### مفتاح مكرر (حتى بحروف كبيرة) ← 409
+POST {{api}}/work-item-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "key": "BUG", "name": "مكرر", "color": "#112233", "icon": "bug" }
+
+### حقل select بدون خيارات ← 400 والخطأ على المسار fields[0].options
+PUT {{api}}/work-item-types/{{typeId}}/fields
+Authorization: Bearer {{token}}
+If-Match: {{typeEtag3}}
+Content-Type: application/json
+
+{ "fields": [{ "key": "pick", "label": "اختيار", "type": "select", "required": false }] }
+
+### بدون If-Match ← 428
+PUT {{api}}/work-item-types/{{typeId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "بدون نسخة", "color": "#d35400", "icon": "epic" }
