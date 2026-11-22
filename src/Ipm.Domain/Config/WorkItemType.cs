@@ -33,6 +33,9 @@ public sealed partial class WorkItemType : AuditableEntity
 
     public bool IsActive { get; private set; } = true;
 
+    /// <summary>The work item workflow of this type (R13). Null only for a row that predates part 03; the seeder binds it.</summary>
+    public Guid? WorkflowId { get; private set; }
+
     public List<FieldDefinition> Fields { get; private set; } = [];
 
     /// <summary>Types allowed as direct children (may include this type itself).</summary>
@@ -88,6 +91,9 @@ public sealed partial class WorkItemType : AuditableEntity
         Fields = [.. wanted.OrderBy(f => f.Order)];
         return Result.Success();
     }
+
+    /// <summary>R13: the handler checks that the workflow exists and is a work item workflow.</summary>
+    public void SetWorkflow(Guid workflowId) => WorkflowId = workflowId;
 
     /// <summary>R5 (the types exist) is checked by the handler. Duplicates are dropped, the order of the request is kept.</summary>
     public void SetAllowedChildren(IEnumerable<Guid> childTypeIds) => AllowedChildTypeIds = [.. childTypeIds.Distinct()];

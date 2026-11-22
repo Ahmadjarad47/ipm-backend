@@ -103,6 +103,102 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ipm.Domain.Config.Status", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(31)
+                        .HasColumnType("character varying(31)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("scope");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_statuses");
+
+                    b.HasIndex("Scope", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_statuses_scope_key");
+
+                    b.HasIndex("Scope", "SortOrder")
+                        .HasDatabaseName("ix_statuses_scope_sort_order");
+
+                    b.ToTable("statuses", "config", t =>
+                        {
+                            t.HasCheckConstraint("ck_statuses_category", "category IN ('not-started', 'active', 'blocked', 'done', 'cancelled')");
+
+                            t.HasCheckConstraint("ck_statuses_color", "color ~ '^#[0-9A-Fa-f]{6}$'");
+
+                            t.HasCheckConstraint("ck_statuses_key", "key ~ '^[a-z][a-z0-9_]{1,30}$'");
+
+                            t.HasCheckConstraint("ck_statuses_scope", "scope IN ('project', 'work-item')");
+
+                            t.HasCheckConstraint("ck_statuses_sort_order", "sort_order >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Ipm.Domain.Config.WorkItemType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -179,6 +275,10 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
+                    b.Property<Guid?>("WorkflowId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workflow_id");
+
                     b.HasKey("Id")
                         .HasName("pk_work_item_types");
 
@@ -189,6 +289,9 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                     b.HasIndex("SortOrder")
                         .HasDatabaseName("ix_work_item_types_sort_order");
 
+                    b.HasIndex("WorkflowId")
+                        .HasDatabaseName("ix_work_item_types_workflow_id");
+
                     b.ToTable("work_item_types", "config", t =>
                         {
                             t.HasCheckConstraint("ck_work_item_types_color", "color ~ '^#[0-9A-Fa-f]{6}$'");
@@ -198,6 +301,86 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_work_item_types_key", "key ~ '^[a-z][a-z0-9_]{1,30}$'");
 
                             t.HasCheckConstraint("ck_work_item_types_sort_order", "sort_order >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Config.Workflow", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("InitialStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("initial_status_id");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(31)
+                        .HasColumnType("character varying(31)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("scope");
+
+                    b.PrimitiveCollection<List<Guid>>("StatusIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("status_ids");
+
+                    b.Property<string>("Transitions")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("transitions");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_workflows");
+
+                    b.HasIndex("InitialStatusId")
+                        .HasDatabaseName("ix_workflows_initial_status_id");
+
+                    b.HasIndex("Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_workflows_key");
+
+                    b.ToTable("workflows", "config", t =>
+                        {
+                            t.HasCheckConstraint("ck_workflows_initial_status", "initial_status_id = ANY (status_ids)");
+
+                            t.HasCheckConstraint("ck_workflows_key", "key ~ '^[a-z][a-z0-9_]{1,30}$'");
+
+                            t.HasCheckConstraint("ck_workflows_scope", "scope IN ('project', 'work-item')");
                         });
                 });
 
@@ -650,6 +833,25 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .HasName("pk_user_tokens");
 
                     b.ToTable("user_tokens", "identity");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Config.WorkItemType", b =>
+                {
+                    b.HasOne("Ipm.Domain.Config.Workflow", null)
+                        .WithMany()
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_item_types_workflows_workflow_id");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Config.Workflow", b =>
+                {
+                    b.HasOne("Ipm.Domain.Config.Status", null)
+                        .WithMany()
+                        .HasForeignKey("InitialStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_workflows_statuses_initial_status_id");
                 });
 
             modelBuilder.Entity("Ipm.Domain.Identity.User", b =>

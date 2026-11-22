@@ -28,6 +28,9 @@ internal sealed class WorkItemTypeConfiguration : IEntityTypeConfiguration<WorkI
         builder.Property(t => t.Fields).HasJsonbList();
         builder.Property(t => t.AllowedChildTypeIds).HasColumnName("allowed_child_type_ids");
 
+        // R13: the work item workflow. Nullable only for rows that predate part 03; the seeder binds them.
+        builder.HasOne<Workflow>().WithMany().HasForeignKey(t => t.WorkflowId).OnDelete(DeleteBehavior.Restrict);
+
         // R1: keys are stored in lower case, so a plain unique index is case-insensitive.
         builder.HasIndex(t => t.Key).IsUnique();
         builder.HasIndex(t => t.SortOrder);

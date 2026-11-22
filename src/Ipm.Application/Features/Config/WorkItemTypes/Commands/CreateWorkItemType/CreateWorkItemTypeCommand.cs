@@ -4,7 +4,7 @@ using Ipm.Domain.Config;
 
 namespace Ipm.Application.Features.Config.WorkItemTypes.Commands.CreateWorkItemType;
 
-/// <summary>A new type starts with no custom fields and no allowed children; they have their own commands.</summary>
+/// <summary>A new type starts with no custom fields and no allowed children; they have their own commands. Without a workflow it gets the standard one (R14).</summary>
 public sealed record CreateWorkItemTypeCommand(
     string Key,
     string Name,
@@ -12,4 +12,5 @@ public sealed record CreateWorkItemTypeCommand(
     string Color,
     WorkItemIcon Icon,
     int Order,
-    bool Active) : ICommand<WorkItemTypeResponse>;
+    bool Active,
+    Guid? WorkflowId) : ICommand<WorkItemTypeResponse>;

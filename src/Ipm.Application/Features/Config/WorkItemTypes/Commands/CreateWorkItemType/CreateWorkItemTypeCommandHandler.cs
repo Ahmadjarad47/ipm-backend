@@ -24,6 +24,13 @@ internal sealed class CreateWorkItemTypeCommandHandler(IApplicationDbContext db,
             return WorkItemTypeErrors.KeyTaken; // R1
         }
 
+        var workflow = await WorkflowBinding.ResolveAsync(db, command.WorkflowId, cancellationToken);
+        if (workflow.IsFailure)
+        {
+            return workflow.Error; // R13, R14
+        }
+
+        created.Value.SetWorkflow(workflow.Value);
         db.WorkItemTypes.Add(created.Value);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return created.Value.ToResponse();

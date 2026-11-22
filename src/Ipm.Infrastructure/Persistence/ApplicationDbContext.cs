@@ -23,6 +23,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<RelationType> RelationTypes => Set<RelationType>();
 
+    public DbSet<Status> Statuses => Set<Status>();
+
+    public DbSet<Workflow> Workflows => Set<Workflow>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();

@@ -1,0 +1,178 @@
+### الجزء 03: سير العمل (الحالات، سير العمل، ربط الأنواع بسير العمل)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### القراءة مفتوحة لأي مستخدم مسجّل. التعديل: statuses.manage للحالات، workflows.manage لسير العمل، workitem.types.manage لربط النوع.
+### تنفيذ الانتقال نفسه (نقل مشروع أو عنصر بين حالتين) بيجي مع الأجزاء 04 و05.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### ─── الحالات ─────────────────────────────────
+
+### كل الحالات بترتيب order (12 افتراضياً). scope: project أو work-item. active=true للمفعّلة فقط
+# @name statuses
+GET {{api}}/statuses?scope=work-item
+Authorization: Bearer {{token}}
+
+###
+@pendingId = {{statuses.response.body.$[?(@.key=='pending')].id}}
+@progressId = {{statuses.response.body.$[?(@.key=='in_progress')].id}}
+
+### حالة واحدة وبترجّع ETag
+GET {{api}}/statuses/{{pendingId}}
+Authorization: Bearer {{token}}
+
+### إنشاء حالة: المفتاح فريد داخل النطاق وبيتحوّل لأحرف صغيرة وما بيتغيّر. category: not-started active blocked done cancelled
+# @name createdStatus
+POST {{api}}/statuses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "key": "waiting_customer",
+  "name": "بانتظار العميل",
+  "description": "العمل متوقف على رد العميل",
+  "color": "#b7791f",
+  "category": "blocked",
+  "scope": "work-item",
+  "order": 8
+}
+
+###
+@statusId = {{createdStatus.response.body.$.id}}
+@statusEtag = {{createdStatus.response.headers.ETag}}
+
+### تعديل حالة وتفعيلها أو تعطيلها (If-Match). order و active إذا انحذفوا بيضلوا. ممنوع تعطيل الحالة الابتدائية لسير عمل (422)
+# @name updatedStatus
+PUT {{api}}/statuses/{{statusId}}
+Authorization: Bearer {{token}}
+If-Match: {{statusEtag}}
+Content-Type: application/json
+
+{ "name": "بانتظار رد العميل", "description": "العمل متوقف على رد العميل", "color": "#b7791f", "category": "blocked", "order": 8, "active": true }
+
+### سجل تعديل الحالة (statuses.manage): الأحدث أولاً
+GET {{api}}/statuses/{{statusId}}/history?page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### ─── سير العمل ───────────────────────────────
+
+### كل سير العمل بحالاته وانتقالاته (3 افتراضياً). أي انتقال غير مذكور ممنوع
+# @name workflows
+GET {{api}}/workflows
+Authorization: Bearer {{token}}
+
+###
+@standardId = {{workflows.response.body.$[?(@.key=='standard')].id}}
+@bugWorkflowId = {{workflows.response.body.$[?(@.key=='bug')].id}}
+
+### سير عمل واحد وبيرجّع ETag
+GET {{api}}/workflows/{{standardId}}
+Authorization: Bearer {{token}}
+
+### إنشاء سير عمل لعناصر العمل: حالات من نفس النطاق ومفعّلة، والابتدائية منها
+# @name createdWorkflow
+POST {{api}}/workflows
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "key": "support",
+  "name": "سير عمل الدعم",
+  "scope": "work-item",
+  "statusIds": ["{{pendingId}}", "{{progressId}}", "{{statusId}}"],
+  "initialStatusId": "{{pendingId}}",
+  "transitions": [
+    { "fromStatusId": "{{pendingId}}", "toStatusId": "{{progressId}}", "requiresAssignee": true },
+    { "fromStatusId": "{{progressId}}", "toStatusId": "{{statusId}}" },
+    { "fromStatusId": "{{statusId}}", "toStatusId": "{{progressId}}", "permission": "tasks.edit" }
+  ]
+}
+
+###
+@workflowId = {{createdWorkflow.response.body.$.id}}
+@workflowEtag = {{createdWorkflow.response.headers.ETag}}
+
+### تعديل سير العمل (If-Match): الاسم والحالات والانتقالات (القوائم كاملة). المفتاح والنطاق ثابتين
+# @name updatedWorkflow
+PUT {{api}}/workflows/{{workflowId}}
+Authorization: Bearer {{token}}
+If-Match: {{workflowEtag}}
+Content-Type: application/json
+
+{
+  "name": "سير عمل الدعم الفني",
+  "statusIds": ["{{pendingId}}", "{{progressId}}", "{{statusId}}"],
+  "initialStatusId": "{{pendingId}}",
+  "transitions": [
+    { "fromStatusId": "{{pendingId}}", "toStatusId": "{{progressId}}", "requiresAssignee": true },
+    { "fromStatusId": "{{progressId}}", "toStatusId": "{{statusId}}", "blockedByOpenDependencies": true },
+    { "fromStatusId": "{{statusId}}", "toStatusId": "{{progressId}}" }
+  ]
+}
+
+### سجل تعديل سير العمل (workflows.manage)
+GET {{api}}/workflows/{{workflowId}}/history
+Authorization: Bearer {{token}}
+
+### ─── ربط النوع بسير العمل ─────────────────────
+
+### نوع جديد بدون workflowId بياخد سير العمل القياسي (standard)؛ وبسير عمل محدد لازم يكون لعناصر العمل
+# @name createdType
+POST {{api}}/work-item-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "key": "support_case", "name": "حالة دعم", "color": "#16a085", "icon": "story", "workflowId": "{{workflowId}}" }
+
+###
+@typeId = {{createdType.response.body.$.id}}
+@typeEtag = {{createdType.response.headers.ETag}}
+
+### نقل النوع لسير عمل ثاني (If-Match). بدون workflowId بيضل الحالي
+PUT {{api}}/work-item-types/{{typeId}}
+Authorization: Bearer {{token}}
+If-Match: {{typeEtag}}
+Content-Type: application/json
+
+{ "name": "حالة دعم", "color": "#16a085", "icon": "story", "workflowId": "{{bugWorkflowId}}" }
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### انتقال من الحالة لنفسها وصلاحية مجهولة ← 400 بالمسار الدقيق transitions[0].toStatusId و transitions[1].permission
+POST {{api}}/workflows
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "key": "broken",
+  "name": "معطوب",
+  "scope": "work-item",
+  "statusIds": ["{{pendingId}}", "{{progressId}}"],
+  "initialStatusId": "{{pendingId}}",
+  "transitions": [
+    { "fromStatusId": "{{pendingId}}", "toStatusId": "{{pendingId}}" },
+    { "fromStatusId": "{{pendingId}}", "toStatusId": "{{progressId}}", "permission": "made.up" }
+  ]
+}
+
+### ربط نوع بسير عمل غير موجود ← 400 WorkItemType.WorkflowInvalid
+POST {{api}}/work-item-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "key": "orphan", "name": "يتيم", "color": "#112233", "icon": "task", "workflowId": "00000000-0000-0000-0000-000000000000" }
+
+### حذف حالة ← 405 (الحالات بتتعطّل ولا بتنحذف)
+DELETE {{api}}/statuses/{{statusId}}
+Authorization: Bearer {{token}}

@@ -5,4 +5,6 @@ internal static class ConfigTags
 {
     public const string WorkItemTypes = "أنواع العمل";
     public const string RelationTypes = "أنواع الروابط";
+    public const string Statuses = "الحالات";
+    public const string Workflows = "سير العمل";
 }

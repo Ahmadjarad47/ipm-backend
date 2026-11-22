@@ -12,6 +12,7 @@ public sealed record WorkItemTypeResponse(
     WorkItemIcon Icon,
     int Order,
     bool Active,
+    Guid? WorkflowId,
     IReadOnlyList<FieldDefinition> Fields,
     IReadOnlyList<Guid> AllowedChildTypeIds,
     uint Version);

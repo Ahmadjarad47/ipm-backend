@@ -30,4 +30,5 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 00 الأساس | مُسلَّم | [00-foundation](docs/modules/00-foundation.md) |
 | 01 الهوية والصلاحيات | مُسلَّم | [01-identity](docs/modules/01-identity.md) |
 | 02 إعدادات الأنواع | مُسلَّم | [02-work-item-types](docs/modules/02-work-item-types.md) |
-| 03–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
+| 03 سير العمل | مُسلَّم | [03-workflows](docs/modules/03-workflows.md) |
+| 04–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |

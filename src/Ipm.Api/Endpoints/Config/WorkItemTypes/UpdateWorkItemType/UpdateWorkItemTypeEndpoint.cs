@@ -16,7 +16,7 @@ internal sealed class UpdateWorkItemTypeEndpoint : IEndpoint
                 }
 
                 return (await sender.Send(
-                        new UpdateWorkItemTypeCommand(id, r.Key, r.Name, r.Description ?? string.Empty, r.Color, r.Icon, r.Order, r.Active, version), ct))
+                        new UpdateWorkItemTypeCommand(id, r.Key, r.Name, r.Description ?? string.Empty, r.Color, r.Icon, r.Order, r.Active, r.WorkflowId, version), ct))
                     .ToETagResult(http.Response, t => t.Version);
             })
             .RequireAuthorization(Permissions.WorkItemTypesManage)
