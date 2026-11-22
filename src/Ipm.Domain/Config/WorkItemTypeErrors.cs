@@ -1,0 +1,27 @@
+using Ipm.Domain.Common;
+
+namespace Ipm.Domain.Config;
+
+public static class WorkItemTypeErrors
+{
+    public static readonly Error NotFound = Error.NotFound("WorkItemType.NotFound", "نوع العمل غير موجود.");
+
+    /// <summary>R1.</summary>
+    public static readonly Error KeyTaken = Error.Conflict("WorkItemType.KeyTaken", "يوجد نوع عمل بنفس المفتاح.");
+
+    /// <summary>R1.</summary>
+    public static readonly Error KeyInvalid = Error.Validation(
+        "WorkItemType.KeyInvalid", "المفتاح: أحرف إنجليزية وأرقام و_ (من 2 إلى 31 خانة) ويبدأ بحرف.");
+
+    /// <summary>R1.</summary>
+    public static readonly Error KeyImmutable = Error.Failure(
+        "WorkItemType.KeyImmutable", "لا يمكن تغيير مفتاح النوع بعد إنشائه. غيّر الاسم بدلاً منه.");
+
+    /// <summary>R3. The exact problems are reported by the validator; this is the domain last line of defense.</summary>
+    public static readonly Error InvalidFields = Error.Validation(
+        "WorkItemType.InvalidFields", "تعريفات الحقول المخصصة غير صالحة.");
+
+    /// <summary>R5.</summary>
+    public static readonly Error ChildTypeNotFound = Error.Validation(
+        "WorkItemType.ChildTypeNotFound", "أحد الأنواع الفرعية المختارة غير موجود.");
+}

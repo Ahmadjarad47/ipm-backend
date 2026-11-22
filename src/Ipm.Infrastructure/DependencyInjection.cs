@@ -1,3 +1,4 @@
+using Ipm.Application.Abstractions.Auditing;
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Caching;
 using Ipm.Application.Abstractions.Data;
@@ -66,12 +67,14 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IAuditLogReader, AuditLogReader>();
     }
 
     /// <summary>What every installation needs (built-in roles, the administrator) and, with <c>Seed:Demo</c>, demo data. One seeder per part, in dependency order.</summary>
     public static async Task SeedDatabaseAsync(this IServiceProvider services, IConfiguration configuration)
     {
         await IdentitySeeder.SeedAsync(services, configuration);
+        await ConfigSeeder.SeedAsync(services, configuration);
     }
 
     /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>

@@ -1,5 +1,6 @@
 using Ipm.Application.Abstractions.Data;
 using Ipm.Domain.Common;
+using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
 using Ipm.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -17,6 +18,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     : IdentityUserContext<User, Guid>(options), IUnitOfWork, IApplicationDbContext
 {
     public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<WorkItemType> WorkItemTypes => Set<WorkItemType>();
+
+    public DbSet<RelationType> RelationTypes => Set<RelationType>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

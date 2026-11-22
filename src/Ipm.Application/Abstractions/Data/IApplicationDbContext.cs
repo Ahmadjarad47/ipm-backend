@@ -1,3 +1,4 @@
+using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,4 +14,9 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
 
     DbSet<Role> Roles { get; }
+
+    // Part 02: work item type settings.
+    DbSet<WorkItemType> WorkItemTypes { get; }
+
+    DbSet<RelationType> RelationTypes { get; }
 }
