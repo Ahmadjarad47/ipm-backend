@@ -1,6 +1,8 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Identity.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
@@ -88,16 +90,25 @@ internal static class WorkItemTransitions
             }
         }
 
-        // R8: until the approvals engine exists (part 06), only a holder of audit.override may make a move that needs an approval.
+        // R9 of part 06: a move that needs an approval spends an approved request of the right event, once. Without one, only a holder of
+        // audit.override may make it (and it is recorded).
         var overridden = false;
         if (transition.RequiresApproval)
         {
-            if (!caller.Has(Permissions.AuditOverride))
+            var subject = new ApprovalSubject(ApprovalSubjectType.WorkItem, item.Id, project, item);
+            var gate = await ApprovalGate.FindAsync(db, subject, ApprovalGate.ItemAction(from.Category), to.Id, time.GetUtcNow(), cancellationToken);
+            if (gate.Request is { } approval)
             {
-                return WorkItemErrors.ApprovalRequired;
+                approval.Consume(time.GetUtcNow());
             }
-
-            overridden = true;
+            else if (caller.Has(Permissions.AuditOverride))
+            {
+                overridden = true;
+            }
+            else
+            {
+                return gate.Drifted ? ApprovalErrors.ProtectedFieldsChanged : WorkItemErrors.ApprovalRequired;
+            }
         }
 
         item.MoveTo(to.Id);

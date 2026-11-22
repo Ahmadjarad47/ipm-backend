@@ -38,11 +38,11 @@ public sealed class ProjectVisibilityTests(ApiFactory factory)
         using var admin = await factory.AdminClientAsync();
         var ssp = await ProjectByCodeAsync(admin, "SSP");
 
-        var page = await ReadAsync(await abdullah.GetAsync(Projects));
+        // Other tests add abdullah to their own fresh projects, so only the demo projects are compared.
+        var page = await ReadAsync(await abdullah.GetAsync(new Uri("/api/v1/projects?pageSize=200", UriKind.Relative)));
         var codes = page.GetProperty("items").EnumerateArray().Select(p => p.GetProperty("code").GetString()).ToList();
 
-        Assert.Equal(["ERP"], codes);
-        Assert.Equal(1, page.GetProperty("total").GetInt32());
+        Assert.Equal(["ERP"], codes.Where(c => c is "ERP" or "SSP" or "BI" or "MAIL"));
 
         var hidden = await abdullah.GetAsync(new Uri($"/api/v1/projects/{ssp.GetProperty("id").GetGuid()}", UriKind.Relative));
         Assert.Equal(HttpStatusCode.NotFound, hidden.StatusCode);

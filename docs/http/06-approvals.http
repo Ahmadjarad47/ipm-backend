@@ -1,0 +1,209 @@
+### الجزء 06: محرك الموافقات (القوالب، الطلبات، القرارات، التفويض، البوابة على الانتقالات)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### مقدّم الطلب (reem / Demo12345) ما بيقرّر على طلبه، والقرار لمعتمد المرحلة أو مفوَّضه. طلب ما إلك علاقة فيه بيرجّع 404.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### مراجع نحتاجها
+# @name directory
+GET {{api}}/users/directory
+Authorization: Bearer {{token}}
+
+###
+@adminId = {{directory.response.body.$[?(@.username=='admin')].id}}
+@khaledId = {{directory.response.body.$[?(@.username=='khaled')].id}}
+@nouraId = {{directory.response.body.$[?(@.username=='noura')].id}}
+
+###
+# @name projects
+GET {{api}}/projects?q=erp
+Authorization: Bearer {{token}}
+
+###
+@projectId = {{projects.response.body.$.items[0].id}}
+
+###
+# @name items
+GET {{api}}/work-items?projectId={{projectId}}&sort=ref&pageSize=12
+Authorization: Bearer {{token}}
+
+###
+@itemId = {{items.response.body.$.items[8].id}}
+
+### ─── القوالب ─────────────────────────────────
+
+### كل المسجّلين بيقرؤوا القوالب (القوالب الثلاثة الافتراضية موجودة دايماً)
+# @name templates
+GET {{api}}/approval-templates?active=true
+Authorization: Bearer {{token}}
+
+###
+@taskTemplateId = {{templates.response.body.$.items[?(@.name=='اعتماد إنجاز مهمة')].id}}
+
+### إنشاء قالب (approvals.configure): event: project-approve أو project-close أو work-item-approve أو sensitive-change
+### المعتمد: user (معرّف مستخدم) أو role (معرّف دور) أو position (project-owner أو direct-manager أو project-manager). rule اختياري
+# @name created
+POST {{api}}/approval-templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "اعتماد مهام حرجة",
+  "event": "work-item-approve",
+  "protectedFields": ["title", "dueDate"],
+  "rule": { "priorities": ["critical"], "actions": ["close", "reopen"], "priority": 10 },
+  "stages": [
+    { "order": 1, "name": "مدير المشروع", "approverKind": "position", "approverId": "project-manager", "dueHours": 48 },
+    { "order": 2, "name": "الاعتماد النهائي", "approverKind": "user", "approverId": "{{adminId}}" }
+  ]
+}
+
+###
+@templateId = {{created.response.body.$.id}}
+@templateEtag = {{created.response.headers.ETag}}
+
+### تعديل القالب (If-Match): الحدث ما بيتغيّر بعد ما تتقدّم طلبات منه، والطلبات الجارية بتحتفظ بنسختها من المراحل
+PUT {{api}}/approval-templates/{{templateId}}
+Authorization: Bearer {{token}}
+If-Match: {{templateEtag}}
+Content-Type: application/json
+
+{
+  "name": "اعتماد مهام حرجة",
+  "event": "work-item-approve",
+  "active": true,
+  "protectedFields": ["title", "dueDate", "parentId"],
+  "rule": { "priorities": ["critical"], "actions": ["close", "reopen"], "priority": 10 },
+  "stages": [
+    { "order": 1, "name": "مدير المشروع", "approverKind": "position", "approverId": "project-manager", "dueHours": 48 },
+    { "order": 2, "name": "الاعتماد النهائي", "approverKind": "user", "approverId": "{{adminId}}" }
+  ]
+}
+
+### القالب اللي بيحكم إجراءً على عنصر: الأعلى rule.priority ثم الأكثر تحديداً ثم الأقدم. بيرجّع null إذا ما في
+GET {{api}}/approval-templates/match?subjectType=work-item&subjectId={{itemId}}&action=close
+Authorization: Bearer {{token}}
+
+### ─── الطلبات ─────────────────────────────────
+
+### تقديم طلب (approvals.request): الإجراء بيُستنتج إذا غاب. بيتجمّد المعتمدون ولقطة الحقول المحمية
+# @name request
+POST {{api}}/approvals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "templateId": "{{taskTemplateId}}", "subjectType": "work-item", "subjectId": "{{itemId}}", "action": "close" }
+
+###
+@approvalId = {{request.response.body.$.id}}
+@approvalEtag = {{request.response.headers.ETag}}
+
+### صناديق الطلبات: inbox (اللي تقدر تقرّر عليها) أو sent (اللي قدّمتها) أو closed. status و overdue و projectId فلاتر
+GET {{api}}/approvals?box=inbox&page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/approvals?box=closed&status=approved
+Authorization: Bearer {{token}}
+
+### طلب واحد (للمقدّم والمعتمد ومن معه approvals.view). غيرهم 404
+# @name approval
+GET {{api}}/approvals/{{approvalId}}
+Authorization: Bearer {{token}}
+
+###
+@approvalEtag2 = {{approval.response.headers.ETag}}
+@revision = {{approval.response.body.$.revision}}
+
+### القرار (If-Match): decision: approve أو reject أو return. الرفض والإرجاع بتعليق إلزامي، و revision الإصدار اللي راجعته
+# @name decided
+POST {{api}}/approvals/{{approvalId}}/decide
+Authorization: Bearer {{token}}
+If-Match: {{approvalEtag2}}
+Content-Type: application/json
+
+{ "decision": "approve", "comment": "تمت المراجعة", "revision": {{revision}} }
+
+###
+@approvalEtag3 = {{decided.response.headers.ETag}}
+
+### موافقة جماعية (حتى 50): موافقة فقط، ولكل طلب رقم الإصدار اللي راجعته
+POST {{api}}/approvals/bulk-decide
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ids": ["{{approvalId}}"], "comment": "موافقة جماعية", "revisions": { "{{approvalId}}": 1 } }
+
+### إعادة تقديم طلب مُعاد أو مُبطل (If-Match): للمقدّم فقط، إصدار جديد من المرحلة 1
+POST {{api}}/approvals/{{approvalId}}/resubmit
+Authorization: Bearer {{token}}
+If-Match: {{approvalEtag3}}
+
+### تذكير المعتمدين (للمقدّم أو approvals.configure): مرة بالساعة (429 بعدها)
+POST {{api}}/approvals/{{approvalId}}/remind
+Authorization: Bearer {{token}}
+
+### ─── التفويض ─────────────────────────────────
+
+### تفويض مؤقت (حتى 90 يوماً): المفوَّض إليه لازم يملك approvals.decide بمشروع. مفوِّض غيرك بصلاحية approvals.configure
+# @name delegation
+POST {{api}}/delegations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "toUserId": "{{nouraId}}", "from": "2026-12-01", "to": "2026-12-10", "reason": "إجازة سنوية" }
+
+###
+@delegationId = {{delegation.response.body.$.id}}
+
+### تفويضاتك (منك أو إليك)، ومن معه approvals.configure بيشوف الكل
+GET {{api}}/delegations
+Authorization: Bearer {{token}}
+
+### إلغاء التفويض (المفوِّض أو approvals.configure)
+DELETE {{api}}/delegations/{{delegationId}}
+Authorization: Bearer {{token}}
+
+### ─── البوابة على الانتقالات ──────────────────
+
+### انتقال عنصر معلَّم requiresApproval: بيصرف طلباً معتمداً مرة وحدة (وإلا 422 WorkItem.ApprovalRequired)
+### ومن معه audit.override بينفّذ بدون طلب ويتسجّل. نفس الشي لانتقال المشروع بين الحالات
+# @name statuses
+GET {{api}}/statuses?scope=work-item
+Authorization: Bearer {{token}}
+
+###
+@completedId = {{statuses.response.body.$[?(@.key=='completed')].id}}
+
+###
+GET {{api}}/work-items/{{itemId}}
+Authorization: Bearer {{token}}
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### قرار على طلبك بنفسك ← 403 Approval.SelfDecision، وإصدار قديم ← 409 Approval.Stale
+POST {{api}}/approvals/{{approvalId}}/decide
+Authorization: Bearer {{token}}
+If-Match: {{approvalEtag3}}
+Content-Type: application/json
+
+{ "decision": "reject", "revision": 99 }
+
+### قالب بمراحل مكسورة ← 400 مع errors.stages
+POST {{api}}/approval-templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "مكسور", "event": "project-close", "protectedFields": ["endDate"], "stages": [] }

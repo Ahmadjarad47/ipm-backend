@@ -1,3 +1,4 @@
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
@@ -45,4 +46,11 @@ public interface IApplicationDbContext
     DbSet<WorkItemRelation> WorkItemRelations { get; }
 
     DbSet<Comment> Comments { get; }
+
+    // Part 06: approvals.
+    DbSet<ApprovalTemplate> ApprovalTemplates { get; }
+
+    DbSet<ApprovalRequest> ApprovalRequests { get; }
+
+    DbSet<Delegation> Delegations { get; }
 }

@@ -1,7 +1,9 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Work.WorkItems.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Work;
@@ -44,6 +46,7 @@ internal sealed class ChangeWorkItemTypeCommandHandler(
         }
 
         item.ChangeType(command.TypeId, item.Fields);
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, item.Id, ["typeId"], cancellationToken); // R11 of part 06
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return new TypeChangeResponse(item.ToResponse(), []);
     }
