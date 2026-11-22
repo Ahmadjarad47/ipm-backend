@@ -48,7 +48,17 @@ internal sealed class UpdateStatusCommandHandler(IApplicationDbContext db, IUnit
                 return StatusErrors.IsInitialStatus(initialIn);
             }
 
-            // R15 (parts 04 and 05): a status that projects or work items are in is checked where those tables exist.
+            // R16 (part 04): a project status that projects are in cannot be switched off.
+            if (status.Scope == StatusScope.Project)
+            {
+                var projects = await db.Projects.CountAsync(p => p.StatusId == status.Id, cancellationToken);
+                if (projects > 0)
+                {
+                    return StatusErrors.InUse(projects);
+                }
+            }
+
+            // R15 (part 05): a work item status that work items are in is checked where that table exists.
         }
 
         status.Update(command.Name, command.Description, command.Color, command.Category, command.Order ?? status.SortOrder, active);

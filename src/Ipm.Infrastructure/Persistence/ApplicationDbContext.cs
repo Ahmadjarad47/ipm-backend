@@ -2,6 +2,7 @@ using Ipm.Application.Abstractions.Data;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
+using Ipm.Domain.Projects;
 using Ipm.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -26,6 +27,14 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Status> Statuses => Set<Status>();
 
     public DbSet<Workflow> Workflows => Set<Workflow>();
+
+    public DbSet<Project> Projects => Set<Project>();
+
+    public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
+
+    public DbSet<ProjectStatusChange> ProjectStatusChanges => Set<ProjectStatusChange>();
+
+    public DbSet<ProjectTemplate> ProjectTemplates => Set<ProjectTemplate>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

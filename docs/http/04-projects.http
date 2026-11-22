@@ -1,0 +1,267 @@
+### الجزء 04: المشاريع (الأعضاء، الحالة، الأنواع المسموحة، استثناءات سير العمل، القوالب)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### الصلاحيات هون بتنحسب بالمشروع: مدير المشروع (khaled / Demo12345) بيعدّل مشاريعه بس، والقارئ (abdullah) بيقرا ما بيعدّل،
+### وأي مشروع ما بتراه بيرجّع 404. جرّب نفس الطلبات بعد تسجيل الدخول بمستخدم ثاني.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### مراجع نحتاجها: المستخدمون، الأدوار، الأنواع، الحالات، سير العمل
+# @name directory
+GET {{api}}/users/directory
+Authorization: Bearer {{token}}
+
+###
+@reemId = {{directory.response.body.$[?(@.username=='reem')].id}}
+@fahadId = {{directory.response.body.$[?(@.username=='fahad')].id}}
+@khaledId = {{directory.response.body.$[?(@.username=='khaled')].id}}
+
+###
+# @name roles
+GET {{api}}/roles?scope=project&pageSize=50
+Authorization: Bearer {{token}}
+
+###
+@managerRoleId = {{roles.response.body.$.items[?(@.key=='project_manager')].id}}
+@memberRoleId = {{roles.response.body.$.items[?(@.key=='team_member')].id}}
+@viewerRoleId = {{roles.response.body.$.items[?(@.key=='viewer')].id}}
+
+###
+# @name types
+GET {{api}}/work-item-types
+Authorization: Bearer {{token}}
+
+###
+@taskTypeId = {{types.response.body.$[?(@.key=='task')].id}}
+@bugTypeId = {{types.response.body.$[?(@.key=='bug')].id}}
+
+###
+# @name projectStatuses
+GET {{api}}/statuses?scope=project
+Authorization: Bearer {{token}}
+
+###
+@activeStatusId = {{projectStatuses.response.body.$[?(@.key=='active')].id}}
+@onHoldStatusId = {{projectStatuses.response.body.$[?(@.key=='on_hold')].id}}
+@cancelledStatusId = {{projectStatuses.response.body.$[?(@.key=='cancelled')].id}}
+
+###
+# @name workflows
+GET {{api}}/workflows?scope=work-item
+Authorization: Bearer {{token}}
+
+###
+@bugWorkflowId = {{workflows.response.body.$[?(@.key=='bug')].id}}
+
+### ─── المشاريع ────────────────────────────────
+
+### المشاريع اللي بتشوفها مع البحث والترقيم. مدير النظام بيشوف الكل، وغيره بيشوف مشاريعه
+### q بالرمز أو الاسم، statusId ownerId memberId archived startFrom startTo endFrom endTo، sort: code name startDate endDate، desc=true
+GET {{api}}/projects?q=erp&archived=false&sort=code&page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### قوالب المشاريع (لأي مسجّل)
+# @name templates
+GET {{api}}/project-templates?active=true
+Authorization: Bearer {{token}}
+
+###
+@opsTemplateId = {{templates.response.body.$[?(@.name=='مشروع تشغيلي')].id}}
+
+### إنشاء مشروع: بيبدأ بحالة «قيد الإعداد». المالك والمنشئ بينضافوا «مدير مشروع». القالب بيعبّي الأنواع المسموحة والأعضاء المقترحين
+# @name createdProject
+POST {{api}}/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "code": "HRX",
+  "name": "بوابة الموارد البشرية",
+  "description": "بوابة لطلبات الإجازات والشهادات",
+  "ownerId": "{{khaledId}}",
+  "startDate": "2026-12-01",
+  "endDate": "2027-04-01",
+  "templateId": "{{opsTemplateId}}"
+}
+
+###
+@projectId = {{createdProject.response.body.$.id}}
+@projectEtag = {{createdProject.response.headers.ETag}}
+
+### مشروع واحد بأعضائه وأنواعه واستثناءاته، وبيرجّع ETag. مشروع ما بتراه ← 404
+# @name project
+GET {{api}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+###
+@projectEtag2 = {{project.response.headers.ETag}}
+
+### تعديل بيانات المشروع (If-Match): الاسم والوصف والتواريخ والمالك (لازم يكون عضواً). الرمز والحالة ما بيتغيّروا من هون
+# @name updatedProject
+PUT {{api}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag2}}
+Content-Type: application/json
+
+{ "name": "بوابة الموارد البشرية (محدّث)", "description": "بوابة لطلبات الإجازات والشهادات", "startDate": "2026-12-01", "endDate": "2027-05-01" }
+
+###
+@projectEtag3 = {{updatedProject.response.headers.ETag}}
+
+### أعضاء المشروع (If-Match): القائمة الكاملة، والمالك فيها دايماً. الأدوار من نطاق project، وما بتمنح دوراً فيه صلاحية ما بتملكها بالمشروع
+# @name members
+PUT {{api}}/projects/{{projectId}}/members
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag3}}
+Content-Type: application/json
+
+{
+  "members": [
+    { "userId": "{{khaledId}}", "roleId": "{{managerRoleId}}" },
+    { "userId": "{{reemId}}", "roleId": "{{memberRoleId}}" },
+    { "userId": "{{fahadId}}", "roleId": "{{viewerRoleId}}" }
+  ]
+}
+
+###
+@projectEtag4 = {{members.response.headers.ETag}}
+
+### الأنواع المسموحة بالمشروع والنوع الافتراضي (If-Match، project.workitemtypes.configure)
+# @name allowedTypes
+PUT {{api}}/projects/{{projectId}}/work-item-types
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag4}}
+Content-Type: application/json
+
+{ "allowedTypeIds": ["{{taskTypeId}}", "{{bugTypeId}}"], "defaultTypeId": "{{taskTypeId}}" }
+
+###
+@projectEtag5 = {{allowedTypes.response.headers.ETag}}
+
+### استثناء سير العمل: بهالمشروع المهام بتمشي على سير عمل الأخطاء (If-Match). إرسال سير عمل النوع نفسه بيشيل الاستثناء
+# @name overrides
+PUT {{api}}/projects/{{projectId}}/workflow-overrides
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag5}}
+Content-Type: application/json
+
+{ "overrides": { "{{taskTypeId}}": "{{bugWorkflowId}}" } }
+
+###
+@projectEtag6 = {{overrides.response.headers.ETag}}
+
+### نقل المشروع بين الحالات (If-Match): لازم يكون الانتقال معرّفاً بسير عمل المشاريع. «قيد الإعداد» ← «ملغى» بدون موافقة
+# @name transitioned
+POST {{api}}/projects/{{projectId}}/transition
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag6}}
+Content-Type: application/json
+
+{ "toStatusId": "{{cancelledStatusId}}", "comment": "تأجيل المشروع للسنة الجاية" }
+
+###
+@projectEtag7 = {{transitioned.response.headers.ETag}}
+
+### سجل حالات المشروع (الأحدث أولاً)
+GET {{api}}/projects/{{projectId}}/status-history?page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### أرشفة المشروع (If-Match، projects.archive): المؤرشف للقراءة فقط
+# @name archived
+POST {{api}}/projects/{{projectId}}/archive
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag7}}
+
+###
+@projectEtag8 = {{archived.response.headers.ETag}}
+
+### استعادة المشروع المؤرشف (If-Match)
+POST {{api}}/projects/{{projectId}}/unarchive
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag8}}
+
+### ─── قوالب المشاريع ──────────────────────────
+
+### إنشاء قالب (settings.manage): الحالة الابتدائية إذا انبعتت لازم تكون الابتدائية لسير عمل المشاريع
+# @name createdTemplate
+POST {{api}}/project-templates
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "مشروع صيانة",
+  "description": "مهام وأخطاء لمشاريع الصيانة الدورية",
+  "allowedTypeIds": ["{{taskTypeId}}", "{{bugTypeId}}"],
+  "defaultTypeId": "{{taskTypeId}}",
+  "suggestedRoleIds": ["{{managerRoleId}}", "{{memberRoleId}}"],
+  "durationDays": 30,
+  "suggestedMembers": [{ "userId": "{{reemId}}", "roleId": "{{memberRoleId}}" }]
+}
+
+###
+@templateId = {{createdTemplate.response.body.$.id}}
+@templateEtag = {{createdTemplate.response.headers.ETag}}
+
+### قالب واحد وبيرجّع ETag
+GET {{api}}/project-templates/{{templateId}}
+Authorization: Bearer {{token}}
+
+### تعديل القالب (If-Match): ما بيغيّر مشاريع انعملت منه. active=false بيعطّله (ما بينحذف)
+PUT {{api}}/project-templates/{{templateId}}
+Authorization: Bearer {{token}}
+If-Match: {{templateEtag}}
+Content-Type: application/json
+
+{
+  "name": "مشروع صيانة",
+  "description": "مهام وأخطاء لمشاريع الصيانة الدورية",
+  "active": true,
+  "allowedTypeIds": ["{{taskTypeId}}", "{{bugTypeId}}"],
+  "defaultTypeId": "{{bugTypeId}}",
+  "suggestedRoleIds": ["{{managerRoleId}}", "{{memberRoleId}}"],
+  "durationDays": 60,
+  "suggestedMembers": []
+}
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### تفعيل المشروع (يتطلب موافقة): ممنوع إلا بصلاحية audit.override لحد ما ينبني محرك الموافقات ← 422 Project.ApprovalRequired لغير المدير
+POST {{api}}/projects/{{projectId}}/transition
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag7}}
+Content-Type: application/json
+
+{ "toStatusId": "{{activeStatusId}}" }
+
+### إزالة المالك من الأعضاء ← 422 Project.OwnerMustBeMember
+PUT {{api}}/projects/{{projectId}}/members
+Authorization: Bearer {{token}}
+If-Match: {{projectEtag7}}
+Content-Type: application/json
+
+{ "members": [{ "userId": "{{reemId}}", "roleId": "{{memberRoleId}}" }] }
+
+### رمز مشروع مكرر ← 409 Project.CodeTaken
+POST {{api}}/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "code": "erp", "name": "مكرر", "ownerId": "{{khaledId}}", "startDate": "2026-12-01", "endDate": "2027-04-01" }
+
+### تعديل بدون If-Match ← 428
+PUT {{api}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "بدون نسخة", "startDate": "2026-12-01", "endDate": "2027-04-01" }

@@ -4,6 +4,9 @@ namespace Ipm.Domain.Identity;
 
 public static class AuthErrors
 {
+    /// <summary>A project-scope permission the caller lacks in a project they can see (403).</summary>
+    public static readonly Error Forbidden = Error.Forbidden("Auth.Forbidden", "لا تملك صلاحية تنفيذ هذا الإجراء.");
+
     public static readonly Error Unauthenticated = Error.Unauthorized("Auth.Unauthenticated", "يجب تسجيل الدخول.");
 
     /// <summary>R1. Same message for unknown, wrong password and disabled, so it reveals nothing.</summary>

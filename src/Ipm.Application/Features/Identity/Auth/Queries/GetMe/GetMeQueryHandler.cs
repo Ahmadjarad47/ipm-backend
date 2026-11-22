@@ -22,7 +22,7 @@ internal sealed class GetMeQueryHandler(IApplicationDbContext db, IUserContext c
         return new MeResponse(
             new MeUser(user.Id, user.Name, user.UserName!, user.Email!, user.Title),
             current.Effective,
-            new Dictionary<string, IReadOnlyList<string>>(),
+            current.ProjectPermissions.ToDictionary(p => p.Key.ToString(), p => p.Value),
             current.Denied,
             user.MustChangePassword);
     }

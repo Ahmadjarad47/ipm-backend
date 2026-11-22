@@ -31,7 +31,7 @@ internal sealed class AccessService(IApplicationDbContext db, ICacheService cach
             return null;
         }
 
-        // Project roles are granted inside a project (part 04), never system-wide.
+        // Project roles are granted inside a project, never system-wide.
         var roles = await db.Roles
             .AsNoTracking()
             .Where(r => user.RoleIds.Contains(r.Id) && r.Scope == RoleScope.System)
@@ -41,13 +41,28 @@ internal sealed class AccessService(IApplicationDbContext db, ICacheService cach
         var granted = roles.SelectMany(r => r.Granted).ToHashSet();
         var denied = roles.SelectMany(r => r.Denied).ToHashSet();
 
+        // What the user project roles give them inside each project they belong to.
+        var memberships = await (
+                from m in db.ProjectMembers.AsNoTracking()
+                join r in db.Roles.AsNoTracking() on m.RoleId equals r.Id
+                where m.UserId == userId && r.Scope == RoleScope.Project
+                select new { m.ProjectId, r.Granted, r.Denied })
+            .ToListAsync(cancellationToken);
+
+        var projectPermissions = memberships.ToDictionary(
+            m => m.ProjectId,
+            m => (IReadOnlyList<string>)[.. Permissions.All.Where(p => m.Granted.Contains(p) && !m.Denied.Contains(p))]);
+
         var access = new UserAccess(
             user.Id,
             user.IsActive,
             user.SecurityStamp ?? string.Empty,
             user.MustChangePassword,
             [.. Permissions.All.Where(granted.Contains)],
-            [.. Permissions.All.Where(denied.Contains)]);
+            [.. Permissions.All.Where(denied.Contains)])
+        {
+            ProjectPermissions = projectPermissions,
+        };
 
         await cache.SetAsync(Key(userId), access, Lifetime, cancellationToken);
         return access;
@@ -56,7 +71,7 @@ internal sealed class AccessService(IApplicationDbContext db, ICacheService cach
     public async Task<bool> CanAsync(Guid userId, string permission, Guid? projectId = null, CancellationToken cancellationToken = default)
     {
         var access = await GetAsync(userId, cancellationToken);
-        return access is not null && access.Has(permission);
+        return access is not null && access.Can(permission, projectId);
     }
 
     public Task InvalidateAsync(Guid userId, CancellationToken cancellationToken = default) =>
@@ -64,8 +79,11 @@ internal sealed class AccessService(IApplicationDbContext db, ICacheService cach
 
     public async Task InvalidateRoleAsync(Guid roleId, CancellationToken cancellationToken = default)
     {
+        // A system role reaches users through their role list; a project role through their memberships.
         var holders = await db.Users.Where(u => u.RoleIds.Contains(roleId)).Select(u => u.Id).ToListAsync(cancellationToken);
-        foreach (var id in holders)
+        var members = await db.ProjectMembers.Where(m => m.RoleId == roleId).Select(m => m.UserId).Distinct().ToListAsync(cancellationToken);
+
+        foreach (var id in holders.Union(members))
         {
             await InvalidateAsync(id, cancellationToken);
         }

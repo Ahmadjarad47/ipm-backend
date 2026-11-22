@@ -1,5 +1,6 @@
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
+using Ipm.Domain.Projects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ipm.Application.Abstractions.Data;
@@ -24,4 +25,13 @@ public interface IApplicationDbContext
     DbSet<Status> Statuses { get; }
 
     DbSet<Workflow> Workflows { get; }
+
+    // Part 04: projects.
+    DbSet<Project> Projects { get; }
+
+    DbSet<ProjectMember> ProjectMembers { get; }
+
+    DbSet<ProjectStatusChange> ProjectStatusChanges { get; }
+
+    DbSet<ProjectTemplate> ProjectTemplates { get; }
 }

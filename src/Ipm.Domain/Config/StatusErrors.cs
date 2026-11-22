@@ -24,4 +24,8 @@ public static class StatusErrors
     /// <summary>R11.</summary>
     public static Error IsInitialStatus(IEnumerable<string> workflowNames) => Error.Failure(
         "Status.IsInitialStatus", $"لا يمكن تعطيل الحالة: هي الحالة الابتدائية لسير العمل: {string.Join("، ", workflowNames)}.");
+
+    /// <summary>R16 (part 04): a project status that projects are in cannot be deactivated.</summary>
+    public static Error InUse(int projects) => Error.Failure(
+        "Status.InUse", $"لا يمكن تعطيل الحالة: يوجد {projects} مشروع بهذه الحالة.");
 }
