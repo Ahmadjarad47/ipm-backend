@@ -30,5 +30,20 @@ public static class JsonColumn
         return property;
     }
 
+    /// <summary>Maps a dictionary of JSON values (the custom field values of a work item) to a <c>jsonb</c> column, compared by its JSON.</summary>
+    public static PropertyBuilder<Dictionary<string, JsonElement>> HasJsonbDictionary(this PropertyBuilder<Dictionary<string, JsonElement>> property)
+    {
+        property.HasColumnType("jsonb")
+            .HasConversion(
+                map => JsonSerializer.Serialize(map, Options),
+                json => JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json, Options) ?? new Dictionary<string, JsonElement>(),
+                new ValueComparer<Dictionary<string, JsonElement>>(
+                    (a, b) => JsonSerializer.Serialize(a, Options) == JsonSerializer.Serialize(b, Options),
+                    map => JsonSerializer.Serialize(map, Options).GetHashCode(StringComparison.Ordinal),
+                    map => JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(JsonSerializer.Serialize(map, Options), Options)
+                        ?? new Dictionary<string, JsonElement>()));
+        return property;
+    }
+
     private static List<T> Deserialize<T>(string json) => JsonSerializer.Deserialize<List<T>>(json, Options) ?? [];
 }

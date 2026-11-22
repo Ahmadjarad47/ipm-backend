@@ -2,6 +2,7 @@ using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Projects.Projects.Common;
+using Ipm.Application.Features.Work.WorkItems.Common;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
@@ -42,7 +43,14 @@ internal sealed class SetProjectWorkItemTypesCommandHandler(
             return ProjectErrors.TypesInvalid;
         }
 
-        // R17 (part 05): narrowing the allowed types under existing work items is checked where those tables exist.
+        // R17 (part 04, enforced from part 05): a type with items in this project cannot be taken off the allowed list.
+        var removedTypes = project.AllowedTypeIds.Where(id => !allowed.Contains(id)).ToList();
+        var stranded = await WorkItemUsage.OfTypesAsync(db, project.Id, removedTypes, cancellationToken);
+        if (stranded > 0)
+        {
+            return ProjectErrors.TypesInUse(stranded);
+        }
+
         var set = project.SetAllowedTypes(allowed, command.DefaultTypeId);
         if (set.IsFailure)
         {

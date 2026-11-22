@@ -32,4 +32,5 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 02 إعدادات الأنواع | مُسلَّم | [02-work-item-types](docs/modules/02-work-item-types.md) |
 | 03 سير العمل | مُسلَّم | [03-workflows](docs/modules/03-workflows.md) |
 | 04 المشاريع | مُسلَّم | [04-projects](docs/modules/04-projects.md) |
-| 05–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
+| 05 عناصر العمل | مُسلَّم | [05-work-items](docs/modules/05-work-items.md) |
+| 05b العلاقات والتعليقات، 06–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |

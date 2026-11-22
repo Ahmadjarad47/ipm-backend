@@ -68,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IAuditLogReader, AuditLogReader>();
+        services.AddScoped<IWorkItemNumbering, WorkItemNumbering>();
     }
 
     /// <summary>What every installation needs (built-in roles, the administrator) and, with <c>Seed:Demo</c>, demo data. One seeder per part, in dependency order.</summary>
@@ -76,6 +77,7 @@ public static class DependencyInjection
         await IdentitySeeder.SeedAsync(services, configuration);
         await ConfigSeeder.SeedAsync(services, configuration);
         await ProjectsSeeder.SeedAsync(services, configuration);
+        await WorkSeeder.SeedAsync(services, configuration);
     }
 
     /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>

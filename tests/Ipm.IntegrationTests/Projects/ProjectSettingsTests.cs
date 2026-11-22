@@ -105,10 +105,17 @@ public sealed class ProjectSettingsTests(ApiFactory factory)
         using var fahad = await factory.SignedInClientAsync("fahad", ApiFactory.DemoPassword);
         using var khaled = await factory.SignedInClientAsync("khaled", ApiFactory.DemoPassword);
         using var admin = await factory.AdminClientAsync();
-        var erp = (await ProjectByCodeAsync(admin, "ERP")).GetProperty("id").GetGuid();
         var task = await TypeIdAsync(admin, "task");
         var body = new { allowedTypeIds = new[] { task }, defaultTypeId = task };
-        var original = (await ProjectByCodeAsync(admin, "ERP")).GetProperty("allowedTypeIds").EnumerateArray().Select(t => t.GetGuid()).ToArray();
+
+        // A fresh project without items (the demo ERP project has items of every type, which part 05 protects, R14).
+        var manager = await RoleIdAsync(admin, "project_manager");
+        var member = await RoleIdAsync(admin, "team_member");
+        var khaledId = await UserIdAsync(admin, "khaled");
+        var (erp, created) = await CreateProjectAsync(admin, ownerId: khaledId);
+        var seeded = await PutMembersAsync(admin, erp, MembersBody((khaledId, manager), (await UserIdAsync(admin, "fahad"), member)), created);
+        Assert.Equal(HttpStatusCode.OK, seeded.StatusCode);
+        var original = (await GetProjectAsync(admin, erp)).Body.GetProperty("allowedTypeIds").EnumerateArray().Select(t => t.GetGuid()).ToArray();
 
         var (_, fahadTag) = await GetProjectAsync(fahad, erp);
         Assert.Equal(HttpStatusCode.Forbidden, (await SendAsync(fahad, HttpMethod.Put, $"/api/v1/projects/{erp}/work-item-types", body, fahadTag)).StatusCode);

@@ -1,6 +1,7 @@
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Config.WorkItemTypes.Common;
+using Ipm.Application.Features.Work.WorkItems.Common;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Microsoft.EntityFrameworkCore;
@@ -50,7 +51,17 @@ internal sealed class UpdateWorkItemTypeCommandHandler(IApplicationDbContext db,
             }
         }
 
-        // R15 (part 05): switching the workflow of a type under existing work items is checked where that table exists.
+        // R15 (part 03, enforced from part 05): switching the workflow under items whose status the new one lacks.
+        if (workflow.Value != type.WorkflowId)
+        {
+            var newStatuses = await db.Workflows.AsNoTracking().Where(w => w.Id == workflow.Value).Select(w => w.StatusIds).SingleAsync(cancellationToken);
+            var stranded = await WorkItemUsage.OfTypeWithoutOverrideOutsideAsync(db, type.Id, newStatuses, cancellationToken);
+            if (stranded > 0)
+            {
+                return WorkItemTypeErrors.WorkflowChangeConflicts(stranded);
+            }
+        }
+
         type.SetWorkflow(workflow.Value);
         type.Update(command.Name, command.Description, command.Color, command.Icon, command.Order ?? type.SortOrder, command.Active ?? type.IsActive);
         await unitOfWork.SaveChangesAsync(cancellationToken);

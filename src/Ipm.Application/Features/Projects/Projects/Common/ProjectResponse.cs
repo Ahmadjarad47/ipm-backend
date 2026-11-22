@@ -18,4 +18,7 @@ public sealed record ProjectResponse(
     IReadOnlyList<Guid> AllowedTypeIds,
     Guid DefaultTypeId,
     IReadOnlyDictionary<Guid, Guid> WorkflowOverrides,
-    uint Version);
+    uint Version,
+    ProjectProgress? Progress = null,
+    int WorkItemCount = 0,
+    int OverdueCount = 0);

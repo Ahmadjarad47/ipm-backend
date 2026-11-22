@@ -969,6 +969,210 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ipm.Domain.Work.ProjectCounter", b =>
+                {
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<int>("LastNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_number");
+
+                    b.HasKey("ProjectId")
+                        .HasName("pk_project_counters");
+
+                    b.ToTable("project_counters", "work");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.WorkItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.PrimitiveCollection<List<Guid>>("AssigneeIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("assignee_ids");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateOnly?>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<string>("Fields")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("fields");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("priority");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Ref")
+                        .IsRequired()
+                        .HasMaxLength(22)
+                        .HasColumnType("character varying(22)")
+                        .HasColumnName("ref");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<Guid>("StatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("status_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<Guid>("TypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("type_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_items");
+
+                    b.HasIndex("AssigneeIds")
+                        .HasDatabaseName("ix_work_items_assignee_ids");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("AssigneeIds"), "gin");
+
+                    b.HasIndex("ParentId")
+                        .HasDatabaseName("ix_work_items_parent_id");
+
+                    b.HasIndex("Ref")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_items_ref");
+
+                    b.HasIndex("StatusId")
+                        .HasDatabaseName("ix_work_items_status_id");
+
+                    b.HasIndex("TypeId")
+                        .HasDatabaseName("ix_work_items_type_id");
+
+                    b.HasIndex("ProjectId", "IsArchived")
+                        .HasDatabaseName("ix_work_items_project_id_is_archived");
+
+                    b.HasIndex("ProjectId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_items_project_id_number");
+
+                    b.HasIndex("ProjectId", "StatusId")
+                        .HasDatabaseName("ix_work_items_project_id_status_id");
+
+                    b.ToTable("work_items", "work", t =>
+                        {
+                            t.HasCheckConstraint("ck_work_items_dates", "start_date IS NULL OR due_date IS NULL OR due_date >= start_date");
+
+                            t.HasCheckConstraint("ck_work_items_parent", "parent_id IS NULL OR parent_id <> id");
+
+                            t.HasCheckConstraint("ck_work_items_priority", "priority IN ('low', 'medium', 'high', 'critical')");
+                        });
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.WorkItemStatusChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_id");
+
+                    b.Property<bool>("ApprovalOverridden")
+                        .HasColumnType("boolean")
+                        .HasColumnName("approval_overridden");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("comment");
+
+                    b.Property<Guid>("FromStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_status_id");
+
+                    b.Property<Guid>("ToStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_status_id");
+
+                    b.Property<Guid>("WorkItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_item_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_item_status_changes");
+
+                    b.HasIndex("ActorId")
+                        .HasDatabaseName("ix_work_item_status_changes_actor_id");
+
+                    b.HasIndex("FromStatusId")
+                        .HasDatabaseName("ix_work_item_status_changes_from_status_id");
+
+                    b.HasIndex("ToStatusId")
+                        .HasDatabaseName("ix_work_item_status_changes_to_status_id");
+
+                    b.HasIndex("WorkItemId", "At")
+                        .HasDatabaseName("ix_work_item_status_changes_work_item_id_at");
+
+                    b.ToTable("work_item_status_changes", "work");
+                });
+
             modelBuilder.Entity("Ipm.Infrastructure.Authentication.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1268,6 +1472,77 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_project_templates_statuses_initial_status_id");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.ProjectCounter", b =>
+                {
+                    b.HasOne("Ipm.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_project_counters_projects_project_id");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.WorkItem", b =>
+                {
+                    b.HasOne("Ipm.Domain.Work.WorkItem", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_work_items_work_items_parent_id");
+
+                    b.HasOne("Ipm.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_items_projects_project_id");
+
+                    b.HasOne("Ipm.Domain.Config.Status", null)
+                        .WithMany()
+                        .HasForeignKey("StatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_items_statuses_status_id");
+
+                    b.HasOne("Ipm.Domain.Config.WorkItemType", null)
+                        .WithMany()
+                        .HasForeignKey("TypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_items_work_item_types_type_id");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.WorkItemStatusChange", b =>
+                {
+                    b.HasOne("Ipm.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_status_changes_users_actor_id");
+
+                    b.HasOne("Ipm.Domain.Config.Status", null)
+                        .WithMany()
+                        .HasForeignKey("FromStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_status_changes_statuses_from_status_id");
+
+                    b.HasOne("Ipm.Domain.Config.Status", null)
+                        .WithMany()
+                        .HasForeignKey("ToStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_status_changes_statuses_to_status_id");
+
+                    b.HasOne("Ipm.Domain.Work.WorkItem", null)
+                        .WithMany()
+                        .HasForeignKey("WorkItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_status_changes_work_items_work_item_id");
                 });
 
             modelBuilder.Entity("Ipm.Infrastructure.Authentication.RefreshToken", b =>
