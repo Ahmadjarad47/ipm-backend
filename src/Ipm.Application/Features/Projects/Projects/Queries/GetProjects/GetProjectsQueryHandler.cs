@@ -2,6 +2,7 @@ using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Common.Pagination;
+using Ipm.Application.Common;
 using Ipm.Application.Features.Identity.Common;
 using Ipm.Application.Features.Projects.Projects.Common;
 using Ipm.Domain.Common;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Ipm.Application.Features.Projects.Projects.Queries.GetProjects;
 
-internal sealed class GetProjectsQueryHandler(IApplicationDbContext db, IUserContext currentUser, IAccessService access)
+internal sealed class GetProjectsQueryHandler(IApplicationDbContext db, IUserContext currentUser, IAccessService access, TimeProvider time)
     : IQueryHandler<GetProjectsQuery, PagedList<ProjectResponse>>
 {
     public async ValueTask<Result<PagedList<ProjectResponse>>> Handle(GetProjectsQuery query, CancellationToken cancellationToken)
@@ -42,7 +43,8 @@ internal sealed class GetProjectsQueryHandler(IApplicationDbContext db, IUserCon
             .Take(query.Page.Take)
             .ToListAsync(cancellationToken);
 
-        return new PagedList<ProjectResponse>([.. rows.Select(p => p.ToResponse())], Math.Max(query.Page.Page, 1), query.Page.Take, total);
+        var stats = await ProjectWorkStats.LoadAsync(db, [.. rows.Select(p => p.Id)], RiyadhClock.Today(time), cancellationToken);
+        return new PagedList<ProjectResponse>([.. rows.Select(p => p.ToResponse().With(stats))], Math.Max(query.Page.Page, 1), query.Page.Take, total);
     }
 
     private static IQueryable<Project> Filter(IQueryable<Project> projects, GetProjectsQuery query)

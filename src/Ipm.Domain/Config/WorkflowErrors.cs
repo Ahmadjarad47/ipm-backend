@@ -32,4 +32,8 @@ public static class WorkflowErrors
     /// <summary>R16 (part 04): a status that projects are in cannot be removed from the project workflow.</summary>
     public static Error StatusInUse(int projects) => Error.Failure(
         "Workflow.StatusInUse", $"لا يمكن إزالة الحالة من سير العمل: يوجد {projects} مشروع بهذه الحالة.");
+
+    /// <summary>R15 (part 03), enforced from part 05: a status that work items following this workflow are in cannot be removed from it.</summary>
+    public static Error StatusInUseByWorkItems(int items) => Error.Failure(
+        "Workflow.StatusInUse", $"لا يمكن إزالة الحالة من سير العمل: يوجد {items} عنصر عمل بهذه الحالة.");
 }

@@ -19,6 +19,11 @@ internal static class ProjectGuard
         IApplicationDbContext db, IUserContext user, IAccessService access, ISecurityEventLog securityLog, Guid projectId, CancellationToken cancellationToken) =>
         LoadAsync(db, user, access, securityLog, projectId, permission: null, track: false, cancellationToken);
 
+    /// <summary>Loads the project with its members for reading (no change tracking), after checking the caller holds <paramref name="permission"/> in it.</summary>
+    public static Task<Result<GuardedProject>> ReadWithAsync(
+        IApplicationDbContext db, IUserContext user, IAccessService access, ISecurityEventLog securityLog, Guid projectId, string permission, CancellationToken cancellationToken) =>
+        LoadAsync(db, user, access, securityLog, projectId, permission, track: false, cancellationToken);
+
     /// <summary>Loads the project with its members for changing, after checking the caller holds <paramref name="permission"/> in it.</summary>
     public static Task<Result<GuardedProject>> ChangeAsync(
         IApplicationDbContext db, IUserContext user, IAccessService access, ISecurityEventLog securityLog, Guid projectId, string permission, CancellationToken cancellationToken) =>

@@ -1,6 +1,7 @@
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Config.Workflows.Common;
+using Ipm.Application.Features.Work.WorkItems.Common;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Microsoft.EntityFrameworkCore;
@@ -54,7 +55,17 @@ internal sealed class UpdateWorkflowCommandHandler(IApplicationDbContext db, IUn
             }
         }
 
-        // R15 (part 05): removing a status that work items are in is checked where that table exists.
+        // R15 (part 03, enforced from part 05): a status that items following this workflow are in cannot be removed from it.
+        if (workflow.Scope == StatusScope.WorkItem)
+        {
+            var removedFromItems = workflow.StatusIds.Where(id => !command.StatusIds.Contains(id)).ToList();
+            var stranded = await WorkItemUsage.FollowingInStatusesAsync(db, workflow.Id, removedFromItems, cancellationToken);
+            if (stranded > 0)
+            {
+                return WorkflowErrors.StatusInUseByWorkItems(stranded);
+            }
+        }
+
         var defined = workflow.SetDefinition(command.Name, command.StatusIds, command.InitialStatusId, command.Transitions);
         if (defined.IsFailure)
         {

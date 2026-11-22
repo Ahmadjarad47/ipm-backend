@@ -1,0 +1,287 @@
+### الجزء 05: عناصر العمل (الإنشاء، التعديل، الأب، الانتقالات، تغيير النوع، التعديل الجماعي، اللوحة، الأثر)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### الصلاحيات بتنحسب بالمشروع: عضو الفريق (reem / Demo12345) بينشئ وبيعدّل وبينقل، والقارئ (abdullah) بيقرا بس،
+### وعنصر بمشروع ما بتراه بيرجّع 404. جرّب نفس الطلبات بعد تسجيل الدخول بمستخدم ثاني.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### مراجع نحتاجها: المشاريع، الأنواع، الحالات، المستخدمون
+# @name projects
+GET {{api}}/projects?q=erp
+Authorization: Bearer {{token}}
+
+###
+@projectId = {{projects.response.body.$.items[0].id}}
+
+###
+# @name types
+GET {{api}}/work-item-types
+Authorization: Bearer {{token}}
+
+###
+@taskTypeId = {{types.response.body.$[?(@.key=='task')].id}}
+@featureTypeId = {{types.response.body.$[?(@.key=='feature')].id}}
+@bugTypeId = {{types.response.body.$[?(@.key=='bug')].id}}
+@subtaskTypeId = {{types.response.body.$[?(@.key=='subtask')].id}}
+
+###
+# @name itemStatuses
+GET {{api}}/statuses?scope=work-item
+Authorization: Bearer {{token}}
+
+###
+@inProgressId = {{itemStatuses.response.body.$[?(@.key=='in_progress')].id}}
+@inReviewId = {{itemStatuses.response.body.$[?(@.key=='in_review')].id}}
+
+###
+# @name directory
+GET {{api}}/users/directory
+Authorization: Bearer {{token}}
+
+###
+@reemId = {{directory.response.body.$[?(@.username=='reem')].id}}
+@fahadId = {{directory.response.body.$[?(@.username=='fahad')].id}}
+
+### ─── القراءة ─────────────────────────────────
+
+### عناصر العمل بالمشاريع اللي بتراها. الفلاتر: projectId typeId statusId priority assigneeId unassigned parentId hasChildren q overdue includeArchived
+### createdFrom createdTo dueFrom dueTo، sort: ref title priority dueDate status type createdAt، desc=true، pageSize حتى 200
+GET {{api}}/work-items?projectId={{projectId}}&sort=ref&page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### المتأخر فقط
+GET {{api}}/work-items?projectId={{projectId}}&overdue=true
+Authorization: Bearer {{token}}
+
+### اللي بلا مسؤول، بالأولوية الأعلى أولاً
+GET {{api}}/work-items?projectId={{projectId}}&unassigned=true&sort=priority&desc=true
+Authorization: Bearer {{token}}
+
+### لوحة الكانبان: عناصر خفيفة وسير العمل الفعلي لكل نوع، والحقول المعلَّمة showOnCard فقط
+GET {{api}}/work-items/board?projectId={{projectId}}
+Authorization: Bearer {{token}}
+
+### ─── إنشاء وتعديل ────────────────────────────
+
+### الإنشاء: الحالة دايماً الابتدائية، والرقم التالي بعد آخر رقم بالمشروع. الميزة بتحتاج business_value والخطأ severity
+# @name created
+POST {{api}}/work-items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "projectId": "{{projectId}}",
+  "typeId": "{{featureTypeId}}",
+  "title": "بوابة الدفع الإلكتروني",
+  "description": "ربط بوابة الدفع بطلبات الشراء",
+  "priority": "high",
+  "startDate": "2026-12-01",
+  "dueDate": "2027-01-15",
+  "assigneeIds": ["{{reemId}}"],
+  "fields": { "business_value": "high", "target_release": "2027.Q1" }
+}
+
+###
+@itemId = {{created.response.body.$.id}}
+
+### عنصر واحد وبيرجّع ETag
+# @name item
+GET {{api}}/work-items/{{itemId}}
+Authorization: Bearer {{token}}
+
+###
+@itemEtag2 = {{item.response.headers.ETag}}
+
+### تعديل (If-Match): تغيير المسؤولين بصلاحية tasks.assign، وغيره بصلاحية tasks.edit. الحالة والنوع والأب بعملياتها الخاصة
+# @name updated
+PUT {{api}}/work-items/{{itemId}}
+Authorization: Bearer {{token}}
+If-Match: {{itemEtag2}}
+Content-Type: application/json
+
+{
+  "title": "بوابة الدفع الإلكتروني (محدّث)",
+  "description": "ربط بوابة الدفع بطلبات الشراء",
+  "priority": "critical",
+  "startDate": "2026-12-01",
+  "dueDate": "2027-01-15",
+  "assigneeIds": ["{{reemId}}", "{{fahadId}}"],
+  "fields": { "business_value": "high", "target_release": "2027.Q1" }
+}
+
+###
+@itemEtag3 = {{updated.response.headers.ETag}}
+
+### مهمة تحت الميزة: نوع الأب لازم يسمح بنوع الابن
+# @name child
+POST {{api}}/work-items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "projectId": "{{projectId}}", "typeId": "{{taskTypeId}}", "title": "تصميم شاشة الدفع", "parentId": "{{itemId}}", "assigneeIds": [] }
+
+###
+@childId = {{child.response.body.$.id}}
+@childEtag = {{child.response.headers.ETag}}
+
+### تغيير الأب (If-Match، tasks.edit): parentId = null بيشيل الأب
+PUT {{api}}/work-items/{{childId}}/parent
+Authorization: Bearer {{token}}
+If-Match: {{childEtag}}
+Content-Type: application/json
+
+{ "parentId": "{{itemId}}" }
+
+### ─── الانتقالات ──────────────────────────────
+
+### نقل إلى «قيد التنفيذ»: بيحتاج مسؤولاً حسب سير العمل. النقل بيتسجّل بسجل الحالة
+# @name started
+POST {{api}}/work-items/{{itemId}}/transition
+Authorization: Bearer {{token}}
+If-Match: {{itemEtag3}}
+Content-Type: application/json
+
+{ "toStatusId": "{{inProgressId}}", "comment": "بدأنا العمل" }
+
+###
+@itemEtag4 = {{started.response.headers.ETag}}
+
+### سجل الحالات (الأحدث أولاً)
+GET {{api}}/work-items/{{itemId}}/status-history
+Authorization: Bearer {{token}}
+
+### الانتقال إلى «قيد المراجعة»
+# @name review
+POST {{api}}/work-items/{{itemId}}/transition
+Authorization: Bearer {{token}}
+If-Match: {{itemEtag4}}
+Content-Type: application/json
+
+{ "toStatusId": "{{inReviewId}}" }
+
+###
+@itemEtag5 = {{review.response.headers.ETag}}
+
+### إغلاق: بيروح لحالة مكتملة معرّفة من الحالة الحالية (إذا فيه وحدة بس بتنختار لحالها). الجسم اختياري
+# @name closed
+POST {{api}}/work-items/{{itemId}}/close
+Authorization: Bearer {{token}}
+If-Match: {{itemEtag5}}
+Content-Type: application/json
+
+{ "comment": "اكتمل واعتُمد" }
+
+###
+@itemEtag6 = {{closed.response.headers.ETag}}
+
+### إعادة فتح: السبب إلزامي
+# @name reopened
+POST {{api}}/work-items/{{itemId}}/reopen
+Authorization: Bearer {{token}}
+If-Match: {{itemEtag6}}
+Content-Type: application/json
+
+{ "comment": "ظهر خطأ بعد الإغلاق" }
+
+###
+@itemEtag7 = {{reopened.response.headers.ETag}}
+
+### ─── تغيير النوع ─────────────────────────────
+
+### فحص بدون تنفيذ (workitem.types.manage): بيرجّع كل التعارضات (حقول مطلوبة ناقصة، حقول ستُفقد، الحالة، الأب، الأبناء)
+POST {{api}}/work-items/{{childId}}/type-change/check
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "typeId": "{{bugTypeId}}" }
+
+### التنفيذ: مع تعارض بيرجّع 422 وقائمة conflicts وما بيتغيّر شي
+POST {{api}}/work-items/{{childId}}/type-change
+Authorization: Bearer {{token}}
+If-Match: {{childEtag}}
+Content-Type: application/json
+
+{ "typeId": "{{subtaskTypeId}}" }
+
+### ─── تعديل جماعي (حتى 100) ───────────────────
+
+### كل عنصر بيتفحص بقواعده وصلاحياته لحاله. الرد نتيجة لكل عنصر ولا يوقف الباقي
+POST {{api}}/work-items/bulk
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ids": ["{{itemId}}", "{{childId}}"], "action": { "kind": "priority", "priority": "low" } }
+
+###
+POST {{api}}/work-items/bulk
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ids": ["{{itemId}}", "{{childId}}"], "action": { "kind": "assign", "assigneeIds": ["{{reemId}}"] } }
+
+###
+POST {{api}}/work-items/bulk
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ids": ["{{itemId}}", "{{childId}}"], "action": { "kind": "dueDate", "dueDate": "2027-02-01" } }
+
+###
+POST {{api}}/work-items/bulk
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ids": ["{{itemId}}", "{{childId}}"], "action": { "kind": "transition", "toStatusId": "{{inProgressId}}", "comment": "دفعة واحدة" } }
+
+### ─── الأرشفة ─────────────────────────────────
+
+### أرشفة (If-Match، tasks.delete): ما بتنحذف. العنصر اللي له أبناء نشطين ما بينأرشف
+DELETE {{api}}/work-items/{{childId}}
+Authorization: Bearer {{token}}
+If-Match: {{childEtag}}
+
+### ─── معاينة الأثر (قراءة فقط) ────────────────
+
+### قبل تعطيل نوع أو تغيير ربطه (workitem.types.manage)
+GET {{api}}/work-item-types/{{taskTypeId}}/impact
+Authorization: Bearer {{token}}
+
+### قبل تعطيل حالة أو إزالتها من سير عمل (statuses.manage)
+GET {{api}}/statuses/{{inProgressId}}/impact
+Authorization: Bearer {{token}}
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### حقل مطلوب ناقص ← 400 مع errors.fields.severity
+POST {{api}}/work-items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "projectId": "{{projectId}}", "typeId": "{{bugTypeId}}", "title": "خطأ بلا خطورة", "assigneeIds": [] }
+
+### تعديل بدون If-Match ← 428
+PUT {{api}}/work-items/{{itemId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "title": "بدون نسخة", "priority": "low", "assigneeIds": [], "fields": { "business_value": "high" } }
+
+### إعادة الفتح بدون سبب ← 400
+POST {{api}}/work-items/{{itemId}}/reopen
+Authorization: Bearer {{token}}
+If-Match: {{itemEtag7}}
+Content-Type: application/json
+
+{ "comment": "" }

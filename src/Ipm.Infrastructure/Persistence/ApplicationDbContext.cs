@@ -3,6 +3,7 @@ using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
+using Ipm.Domain.Work;
 using Ipm.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -35,6 +36,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<ProjectStatusChange> ProjectStatusChanges => Set<ProjectStatusChange>();
 
     public DbSet<ProjectTemplate> ProjectTemplates => Set<ProjectTemplate>();
+
+    public DbSet<WorkItem> WorkItems => Set<WorkItem>();
+
+    public DbSet<WorkItemStatusChange> WorkItemStatusChanges => Set<WorkItemStatusChange>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

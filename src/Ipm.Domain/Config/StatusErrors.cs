@@ -28,4 +28,8 @@ public static class StatusErrors
     /// <summary>R16 (part 04): a project status that projects are in cannot be deactivated.</summary>
     public static Error InUse(int projects) => Error.Failure(
         "Status.InUse", $"لا يمكن تعطيل الحالة: يوجد {projects} مشروع بهذه الحالة.");
+
+    /// <summary>R15 (part 03), enforced from part 05: a work item status that work items are in cannot be deactivated.</summary>
+    public static Error InUseByWorkItems(int items) => Error.Failure(
+        "Status.InUse", $"لا يمكن تعطيل الحالة: يوجد {items} عنصر عمل بهذه الحالة.");
 }

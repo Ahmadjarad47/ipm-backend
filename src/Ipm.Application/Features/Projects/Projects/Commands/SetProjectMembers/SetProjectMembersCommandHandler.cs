@@ -3,6 +3,7 @@ using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Projects.Projects.Common;
 using Ipm.Domain.Common;
+using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
 using Microsoft.EntityFrameworkCore;
@@ -71,8 +72,38 @@ internal sealed class SetProjectMembersCommandHandler(
             await access.InvalidateAsync(userId, cancellationToken); // their permissions in this project changed
         }
 
-        // R17 (part 05): warnings about open work still assigned to a removed member.
-        return new ProjectMembersResponse(project.ToResponse(), []);
+        // R17 (part 04, filled from part 05): open work still assigned to a removed member is left as it is, with a warning.
+        return new ProjectMembersResponse(project.ToResponse(), await WarningsAsync(project.Id, removed.Select(m => m.UserId).ToList(), cancellationToken));
+    }
+
+    private async Task<IReadOnlyList<MemberWarning>> WarningsAsync(Guid projectId, List<Guid> removedUserIds, CancellationToken cancellationToken)
+    {
+        if (removedUserIds.Count == 0)
+        {
+            return [];
+        }
+
+        var open = await (
+                from i in db.WorkItems.AsNoTracking()
+                join s in db.Statuses on i.StatusId equals s.Id
+                where i.ProjectId == projectId && !i.IsArchived && s.Category != StatusCategory.Done && s.Category != StatusCategory.Cancelled
+                orderby i.Number
+                select new { i.Ref, i.AssigneeIds })
+            .ToListAsync(cancellationToken);
+        var names = await db.Users.AsNoTracking().Where(u => removedUserIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
+
+        var warnings = new List<MemberWarning>();
+        foreach (var userId in removedUserIds)
+        {
+            var refs = open.Where(i => i.AssigneeIds.Contains(userId)).Select(i => i.Ref).ToList();
+            if (refs.Count > 0)
+            {
+                var name = names.GetValueOrDefault(userId, "—");
+                warnings.Add(new MemberWarning(userId, name, refs, $"«{name}» ما زال مكلّفاً بـ {refs.Count} عنصر عمل مفتوح. لم يتغيّر شيء عليها، وأعد تكليفها عند اللزوم."));
+            }
+        }
+
+        return warnings;
     }
 
     /// <summary>R7: every added or re-roled member is an active user and has a project-scope role.</summary>

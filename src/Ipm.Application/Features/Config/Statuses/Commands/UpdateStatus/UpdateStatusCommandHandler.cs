@@ -58,7 +58,15 @@ internal sealed class UpdateStatusCommandHandler(IApplicationDbContext db, IUnit
                 }
             }
 
-            // R15 (part 05): a work item status that work items are in is checked where that table exists.
+            // R15 (part 03, enforced from part 05): a work item status that work items are in cannot be switched off.
+            if (status.Scope == StatusScope.WorkItem)
+            {
+                var items = await db.WorkItems.CountAsync(i => i.StatusId == status.Id, cancellationToken);
+                if (items > 0)
+                {
+                    return StatusErrors.InUseByWorkItems(items);
+                }
+            }
         }
 
         status.Update(command.Name, command.Description, command.Color, command.Category, command.Order ?? status.SortOrder, active);

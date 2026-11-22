@@ -2,6 +2,7 @@ using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Projects.Projects.Common;
+using Ipm.Application.Features.Work.WorkItems.Common;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
@@ -50,9 +51,34 @@ internal sealed class SetProjectWorkflowOverridesCommandHandler(
         }
 
         // R13: an override equal to the type own workflow is no override at all.
-        project.SetWorkflowOverrides(command.Overrides.Where(o => types[o.TypeId] != o.WorkflowId));
+        var wanted = command.Overrides.Where(o => types[o.TypeId] != o.WorkflowId).ToList();
 
-        // R17 (part 05): items whose status the new workflow lacks are checked where the items table exists.
+        // R17 (part 04, enforced from part 05): for every type whose workflow changes here, its items must be in a status the new one has.
+        var affected = project.WorkflowOverrides.Select(o => o.TypeId).Concat(wanted.Select(o => o.TypeId)).Distinct().ToList();
+        var own = await db.WorkItemTypes.AsNoTracking().Where(t => affected.Contains(t.Id)).ToDictionaryAsync(t => t.Id, t => t.WorkflowId, cancellationToken);
+        foreach (var typeId in affected.Where(own.ContainsKey))
+        {
+            if (own[typeId] is not { } typeWorkflow)
+            {
+                continue;
+            }
+
+            var after = wanted.Find(o => o.TypeId == typeId)?.WorkflowId ?? typeWorkflow;
+            if (after == project.EffectiveWorkflowId(typeId, typeWorkflow))
+            {
+                continue;
+            }
+
+            var statusIds = await db.Workflows.AsNoTracking().Where(w => w.Id == after).Select(w => w.StatusIds).SingleAsync(cancellationToken);
+            var stranded = await WorkItemUsage.OutsideStatusesAsync(db, project.Id, typeId, statusIds, cancellationToken);
+            if (stranded > 0)
+            {
+                return ProjectErrors.WorkflowOverrideConflicts(stranded);
+            }
+        }
+
+        project.SetWorkflowOverrides(wanted);
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return project.ToResponse();
     }
