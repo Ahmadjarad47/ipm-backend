@@ -1,6 +1,8 @@
 using System.Globalization;
 using Ipm.Application.Abstractions.Events;
+using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Behaviors;
+using Ipm.Application.Features.Identity.Access;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +32,8 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(AssemblyReference).Assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
 
         AddDomainEventHandlers(services);
+
+        services.AddScoped<IAccessService, AccessService>();
 
         return services;
     }

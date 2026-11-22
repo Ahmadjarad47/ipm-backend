@@ -1,0 +1,207 @@
+### الجزء 01: الهوية والصلاحيات
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها.
+### @host: 8080 للـ API داخل docker compose، أو 5150 مع dotnet run.
+### حسابات التطوير (Seed:Demo): admin / Admin12345، وباقي المستخدمين (khaled, noura, fahad, reem, abdullah) كلمة سرهم Demo12345، و mona معطّلة.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### ─── الدخول ───────────────────────────────────
+
+### تسجيل الدخول: بيرجّع access token بالجسم و refresh token بـ cookie (HttpOnly). 5 محاولات غلط = قفل 15 دقيقة (429)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### المستخدم الحالي وصلاحياته (شكل AuthSession بالواجهة). يشتغل حتى لو لازم يغيّر كلمة المرور
+# @name me
+GET {{api}}/auth/me
+Authorization: Bearer {{token}}
+
+###
+@myId = {{me.response.body.$.user.id}}
+
+### تجديد الجلسة: بيقرا refresh token من الـ cookie. استعمال توكن قديم مرة ثانية = 401 وبتنلغى كل الجلسات
+# (الـ cookie بتنبعت Secure فقط عبر https؛ على http جرّبها من أداة بتعيد إرسال الـ cookie يدوياً)
+POST {{api}}/auth/refresh
+
+### تغيير كلمة المرور: بينهي باقي الجلسات ويرجّع توكنات جديدة، ويصفّر mustChangePassword
+POST {{api}}/auth/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "currentPassword": "Admin12345", "newPassword": "Admin12345x" }
+
+### تسجيل الخروج
+POST {{api}}/auth/logout
+Authorization: Bearer {{token}}
+
+### ─── الصلاحيات والأدوار ───────────────────────
+
+### مفاتيح الصلاحيات الـ 42 مجمّعة بأسمائها العربية
+GET {{api}}/permissions
+Authorization: Bearer {{token}}
+
+### الأدوار (scope اختياري: system أو project) مع عدد الصلاحيات والمستخدمين
+# @name roles
+GET {{api}}/roles?scope=system&pageSize=50
+Authorization: Bearer {{token}}
+
+###
+@staffRoleId = {{roles.response.body.$.items[?(@.key=='staff')].id}}
+
+### دور واحد مع صلاحياته والممنوع، وبيرجّع ETag
+# @name role
+GET {{api}}/roles/{{staffRoleId}}
+Authorization: Bearer {{token}}
+
+###
+@roleEtag = {{role.response.headers.ETag}}
+
+### إنشاء دور (permissions.manage = roles.manage). ما بتمنح صلاحية ما بتملكها (403). النطاق ثابت بعد الإنشاء
+# @name createdRole
+POST {{api}}/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "مراجع تقارير",
+  "description": "يشوف لوحة القيادة والتقارير فقط",
+  "scope": "system",
+  "permissions": ["dashboard.view", "reports.view"],
+  "denied": []
+}
+
+###
+@newRoleId = {{createdRole.response.body.$.id}}
+@newRoleEtag = {{createdRole.response.headers.ETag}}
+
+### إنشاء دور كنسخة من دور تاني (بدون قوائم صلاحيات)
+POST {{api}}/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "نسخة من موظف", "scope": "system", "copyFromRoleId": "{{staffRoleId}}" }
+
+### تعديل دور: القائمة المرسلة هي القائمة الكاملة. If-Match إجباري (428 بدونه، 412 إذا حدا عدّل قبلك)
+# @name updatedRole
+PUT {{api}}/roles/{{newRoleId}}
+Authorization: Bearer {{token}}
+If-Match: {{newRoleEtag}}
+Content-Type: application/json
+
+{
+  "name": "مراجع تقارير",
+  "description": "لوحة القيادة والتقارير والتصدير",
+  "permissions": ["dashboard.view", "reports.view", "reports.export"],
+  "denied": []
+}
+
+###
+@newRoleEtag2 = {{updatedRole.response.headers.ETag}}
+
+### حذف دور: المدمج ما بينحذف (422)، والمسند لمستخدمين ما بينحذف (409)
+DELETE {{api}}/roles/{{newRoleId}}
+Authorization: Bearer {{token}}
+If-Match: {{newRoleEtag2}}
+
+### ─── المستخدمون ──────────────────────────────
+
+### دليل المستخدمين المختصر (لأي مستخدم مسجّل): بدون بريد ولا مدير ولا أدوار
+GET {{api}}/users/directory
+Authorization: Bearer {{token}}
+
+### قائمة المستخدمين الكاملة مع البحث (permissions.assign): q بالاسم أو اسم المستخدم أو البريد
+GET {{api}}/users?q=خالد&active=true&page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### إنشاء مستخدم: المدير بيحط كلمة المرور الأولى والمستخدم مجبور يغيّرها (mustChangePassword)
+# @name createdUser
+POST {{api}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "username": "layla",
+  "name": "ليلى الأحمد",
+  "email": "layla@example.local",
+  "title": "محللة جودة",
+  "managerId": "{{myId}}",
+  "systemRoleIds": ["{{staffRoleId}}"],
+  "password": "Welcome12345"
+}
+
+###
+@userId = {{createdUser.response.body.$.id}}
+@userEtag = {{createdUser.response.headers.ETag}}
+
+### مستخدم واحد وبيرجّع ETag (كامل لصاحب permissions.assign، وإلا مختصر)
+# @name user
+GET {{api}}/users/{{userId}}
+Authorization: Bearer {{token}}
+
+###
+@userEtag2 = {{user.response.headers.ETag}}
+
+### تعديل بيانات مستخدم (If-Match). المدير لازم يكون نشط وبدون حلقة دائرية
+# @name updatedUser
+PUT {{api}}/users/{{userId}}
+Authorization: Bearer {{token}}
+If-Match: {{userEtag2}}
+Content-Type: application/json
+
+{ "name": "ليلى الأحمد", "email": "layla@example.local", "title": "محللة جودة أولى", "managerId": "{{myId}}" }
+
+###
+@userEtag3 = {{updatedUser.response.headers.ETag}}
+
+### تعيين أدوار النظام (If-Match): ممنوع تعدّل أدوارك، أو حساب أعلى منك، أو تسند صلاحية ما بتملكها
+# @name rolesSet
+PUT {{api}}/users/{{userId}}/roles
+Authorization: Bearer {{token}}
+If-Match: {{userEtag3}}
+Content-Type: application/json
+
+{ "systemRoleIds": ["{{staffRoleId}}", "{{newRoleId}}"] }
+
+###
+@userEtag4 = {{rolesSet.response.headers.ETag}}
+
+### تعطيل مستخدم (If-Match): ما بيقدر يسجّل دخول وجلساته بتنقطع
+# @name deactivated
+POST {{api}}/users/{{userId}}/deactivate
+Authorization: Bearer {{token}}
+If-Match: {{userEtag4}}
+
+###
+@userEtag5 = {{deactivated.response.headers.ETag}}
+
+### تفعيل مستخدم (If-Match)
+POST {{api}}/users/{{userId}}/activate
+Authorization: Bearer {{token}}
+If-Match: {{userEtag5}}
+
+### إعادة تعيين كلمة المرور: كلمة مؤقتة يحطها المدير، بتقطع جلساته وبتصفّر القفل
+POST {{api}}/users/{{userId}}/reset-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "newPassword": "Temp12345" }
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### بدون توكن ← 401
+GET {{api}}/roles
+
+### كلمة مرور ضعيفة ← 400 مع رسالة عربية على الحقل password
+POST {{api}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "username": "weak", "name": "ضعيف", "email": "weak@example.local", "systemRoleIds": [], "password": "short" }
