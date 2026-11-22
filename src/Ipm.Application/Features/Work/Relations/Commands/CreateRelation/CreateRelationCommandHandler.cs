@@ -1,8 +1,10 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Work.Relations.Common;
 using Ipm.Application.Features.Work.WorkItems.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Work;
@@ -97,6 +99,8 @@ internal sealed class CreateRelationCommandHandler(
         }
 
         db.WorkItemRelations.Add(created.Value);
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, source.Id, ["relations"], cancellationToken); // R11 of part 06
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, target.Id, ["relations"], cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return created.Value.ToResponse();
     }

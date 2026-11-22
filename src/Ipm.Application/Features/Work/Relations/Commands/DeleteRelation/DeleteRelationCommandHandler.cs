@@ -1,7 +1,9 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Work.WorkItems.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Work;
@@ -33,6 +35,8 @@ internal sealed class DeleteRelationCommandHandler(
         }
 
         db.WorkItemRelations.Remove(relation);
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, relation.SourceId, ["relations"], cancellationToken); // R11 of part 06
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, relation.TargetId, ["relations"], cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }

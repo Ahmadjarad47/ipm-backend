@@ -11,4 +11,5 @@ public static class Schemas
     public const string Config = "config";
     public const string Projects = "projects";
     public const string Work = "work";
+    public const string Approvals = "approvals";
 }

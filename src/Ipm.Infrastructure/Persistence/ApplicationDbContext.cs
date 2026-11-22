@@ -1,4 +1,5 @@
 using Ipm.Application.Abstractions.Data;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
@@ -44,6 +45,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<WorkItemRelation> WorkItemRelations => Set<WorkItemRelation>();
 
     public DbSet<Comment> Comments => Set<Comment>();
+
+    public DbSet<ApprovalTemplate> ApprovalTemplates => Set<ApprovalTemplate>();
+
+    public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
+
+    public DbSet<Delegation> Delegations => Set<Delegation>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

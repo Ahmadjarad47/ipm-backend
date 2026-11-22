@@ -1,7 +1,9 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Work.WorkItems.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Work;
@@ -90,12 +92,21 @@ internal sealed class UpdateWorkItemCommandHandler(
             }
         }
 
+        var changedFields = new List<string>();
+        if (command.Title.Trim() != item.Title) { changedFields.Add("title"); }
+        if (command.Description.Trim() != item.Description) { changedFields.Add("description"); }
+        if (command.Priority != item.Priority) { changedFields.Add("priority"); }
+        if (command.StartDate != item.StartDate) { changedFields.Add("startDate"); }
+        if (command.DueDate != item.DueDate) { changedFields.Add("dueDate"); }
+        if (assigneesChanged) { changedFields.Add("assigneeIds"); }
+
         var updated = item.Update(command.Title, command.Description, command.Priority, command.StartDate, command.DueDate, command.AssigneeIds, fields);
         if (updated.IsFailure)
         {
             return updated.Error;
         }
 
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, item.Id, changedFields, cancellationToken); // R11 of part 06
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return item.ToResponse();
     }

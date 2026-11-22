@@ -1,7 +1,9 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Projects.Projects.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
@@ -39,6 +41,7 @@ internal sealed class UpdateProjectCommandHandler(
             return codeUnchanged.Error;
         }
 
+        var before = (project.Name, project.Description, project.StartDate, project.EndDate, project.OwnerId);
         if (command.StatusId is { } statusId && statusId != project.StatusId)
         {
             return ProjectErrors.StatusChangeNotAllowed; // R9
@@ -64,6 +67,15 @@ internal sealed class UpdateProjectCommandHandler(
         {
             return updated.Error;
         }
+
+        // R11 of part 06: a pending approval that protects a field changed here is superseded in the same save.
+        var changedFields = new List<string>();
+        if (project.Name != before.Name) { changedFields.Add("name"); }
+        if (project.Description != before.Description) { changedFields.Add("description"); }
+        if (project.StartDate != before.StartDate) { changedFields.Add("startDate"); }
+        if (project.EndDate != before.EndDate) { changedFields.Add("endDate"); }
+        if (project.OwnerId != before.OwnerId) { changedFields.Add("ownerId"); }
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.Project, project.Id, changedFields, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return project.ToResponse();

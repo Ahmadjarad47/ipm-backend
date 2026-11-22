@@ -23,6 +23,286 @@ namespace Ipm.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Ipm.Domain.Approvals.ApprovalRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("CurrentStage")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_stage");
+
+                    b.Property<string>("Decisions")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("decisions");
+
+                    b.Property<DateTimeOffset?>("LastRemindedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_reminded_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requester_id");
+
+                    b.Property<string>("ResolvedApprovers")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resolved_approvers");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("snapshot");
+
+                    b.Property<DateTimeOffset?>("StageDueAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("stage_due_at");
+
+                    b.Property<string>("Stages")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("stages");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("SubjectType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("subject_type");
+
+                    b.Property<Guid?>("TargetStatusId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_status_id");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_approval_requests");
+
+                    b.HasIndex("RequesterId")
+                        .HasDatabaseName("ix_approval_requests_requester_id");
+
+                    b.HasIndex("TargetStatusId")
+                        .HasDatabaseName("ix_approval_requests_target_status_id");
+
+                    b.HasIndex("TemplateId")
+                        .HasDatabaseName("ix_approval_requests_template_id");
+
+                    b.HasIndex("ProjectId", "Status")
+                        .HasDatabaseName("ix_approval_requests_project_id_status");
+
+                    b.HasIndex("SubjectType", "SubjectId", "Status")
+                        .HasDatabaseName("ix_approval_requests_subject_type_subject_id_status");
+
+                    b.ToTable("approval_requests", "approvals", t =>
+                        {
+                            t.HasCheckConstraint("ck_approval_requests_status", "status IN ('pending-approval', 'approved', 'rejected', 'returned', 'superseded')");
+
+                            t.HasCheckConstraint("ck_approval_requests_subject_type", "subject_type IN ('project', 'work-item')");
+                        });
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Approvals.ApprovalTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllowSelfApproval")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_self_approval");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Event")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("event");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.PrimitiveCollection<List<string>>("ProtectedFields")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("protected_fields");
+
+                    b.Property<string>("Rule")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rule");
+
+                    b.Property<string>("Stages")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("stages");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_approval_templates");
+
+                    b.HasIndex("Event", "IsActive")
+                        .HasDatabaseName("ix_approval_templates_event_is_active");
+
+                    b.ToTable("approval_templates", "approvals", t =>
+                        {
+                            t.HasCheckConstraint("ck_approval_templates_event", "event IN ('project-approve', 'project-close', 'work-item-approve', 'sensitive-change')");
+                        });
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Approvals.Delegation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateOnly>("FromDate")
+                        .HasColumnType("date")
+                        .HasColumnName("from_date");
+
+                    b.Property<Guid>("FromUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<DateOnly>("ToDate")
+                        .HasColumnType("date")
+                        .HasColumnName("to_date");
+
+                    b.Property<Guid>("ToUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_user_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_delegations");
+
+                    b.HasIndex("ToUserId")
+                        .HasDatabaseName("ix_delegations_to_user_id");
+
+                    b.HasIndex("FromUserId", "IsActive")
+                        .HasDatabaseName("ix_delegations_from_user_id_is_active");
+
+                    b.ToTable("delegations", "approvals", t =>
+                        {
+                            t.HasCheckConstraint("ck_delegations_dates", "to_date >= from_date");
+                        });
+                });
+
             modelBuilder.Entity("Ipm.Domain.Config.RelationType", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1488,6 +1768,53 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .HasName("pk_user_tokens");
 
                     b.ToTable("user_tokens", "identity");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Approvals.ApprovalRequest", b =>
+                {
+                    b.HasOne("Ipm.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_approval_requests_projects_project_id");
+
+                    b.HasOne("Ipm.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_approval_requests_asp_net_users_requester_id");
+
+                    b.HasOne("Ipm.Domain.Config.Status", null)
+                        .WithMany()
+                        .HasForeignKey("TargetStatusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_approval_requests_statuses_target_status_id");
+
+                    b.HasOne("Ipm.Domain.Approvals.ApprovalTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_approval_requests_approval_templates_template_id");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Approvals.Delegation", b =>
+                {
+                    b.HasOne("Ipm.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("FromUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_delegations_asp_net_users_from_user_id");
+
+                    b.HasOne("Ipm.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ToUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_delegations_asp_net_users_to_user_id");
                 });
 
             modelBuilder.Entity("Ipm.Domain.Config.WorkItemType", b =>

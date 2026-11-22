@@ -1,7 +1,9 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Projects.Projects.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
 using Ipm.Domain.Identity;
@@ -63,6 +65,11 @@ internal sealed class SetProjectMembersCommandHandler(
         if (set.IsFailure)
         {
             return set.Error;
+        }
+
+        if (added.Count + changed.Count + removed.Count > 0)
+        {
+            await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.Project, project.Id, ["members"], cancellationToken); // R11 of part 06
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

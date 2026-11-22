@@ -45,5 +45,22 @@ public static class JsonColumn
         return property;
     }
 
+    /// <summary>Maps one optional record to a <c>jsonb</c> column, with the same JSON the API speaks. Compared by its JSON, so a change moves the row version.</summary>
+    public static PropertyBuilder<T?> HasJsonbObject<T>(this PropertyBuilder<T?> property)
+        where T : class
+    {
+        property.HasColumnType("jsonb")
+            .HasConversion(
+                value => value == null ? null : JsonSerializer.Serialize(value, Options),
+                json => json == null ? null : JsonSerializer.Deserialize<T>(json, Options),
+                new ValueComparer<T?>(
+                    (a, b) => Serialize(a) == Serialize(b),
+                    value => Serialize(value).GetHashCode(StringComparison.Ordinal),
+                    value => value == null ? null : JsonSerializer.Deserialize<T>(Serialize(value), Options)));
+        return property;
+    }
+
+    private static string Serialize<T>(T? value) => JsonSerializer.Serialize(value, Options);
+
     private static List<T> Deserialize<T>(string json) => JsonSerializer.Deserialize<List<T>>(json, Options) ?? [];
 }

@@ -1,7 +1,9 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Messaging;
+using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Work.WorkItems.Common;
+using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Work;
@@ -59,6 +61,8 @@ internal sealed class BulkUpdateWorkItemsCommandHandler(
             return (new BulkItemResult(id, item.Ref, false, changed.Error.Description), false);
         }
 
+        var changedField = action.Kind switch { "assign" => "assigneeIds", "priority" => "priority", "dueDate" => "dueDate", _ => null };
+        await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, item.Id, changedField is null ? [] : [changedField], cancellationToken); // R11 of part 06
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return (new BulkItemResult(id, item.Ref, true, null), true);
     }

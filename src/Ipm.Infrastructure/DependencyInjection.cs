@@ -78,6 +78,7 @@ public static class DependencyInjection
         await ConfigSeeder.SeedAsync(services, configuration);
         await ProjectsSeeder.SeedAsync(services, configuration);
         await WorkSeeder.SeedAsync(services, configuration);
+        await ApprovalsSeeder.SeedAsync(services, configuration);
     }
 
     /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>
