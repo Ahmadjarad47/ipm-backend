@@ -28,4 +28,8 @@ public static class WorkflowErrors
     /// <summary>R6 and R12: the statuses exist, have this scope, and a newly added one is active.</summary>
     public static readonly Error StatusesInvalid = Error.Validation(
         "Workflow.StatusesInvalid", "حالات سير العمل يجب أن تكون موجودة ومن نفس نطاق سير العمل، والحالة المضافة مفعّلة.");
+
+    /// <summary>R16 (part 04): a status that projects are in cannot be removed from the project workflow.</summary>
+    public static Error StatusInUse(int projects) => Error.Failure(
+        "Workflow.StatusInUse", $"لا يمكن إزالة الحالة من سير العمل: يوجد {projects} مشروع بهذه الحالة.");
 }

@@ -32,4 +32,8 @@ public static class WorkItemTypeErrors
     /// <summary>R14.</summary>
     public static readonly Error WorkflowRequired = Error.Validation(
         "WorkItemType.WorkflowRequired", "اختر سير عمل للنوع: لا يوجد سير العمل الافتراضي (standard).");
+
+    /// <summary>R16 (part 04): a type that projects use as their default cannot be deactivated.</summary>
+    public static Error IsProjectDefault(IEnumerable<string> projectCodes) => Error.Failure(
+        "WorkItemType.IsProjectDefault", $"لا يمكن تعطيل النوع: هو النوع الافتراضي في المشاريع: {string.Join("، ", projectCodes)}.");
 }

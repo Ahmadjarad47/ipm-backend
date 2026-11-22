@@ -43,7 +43,18 @@ internal sealed class UpdateWorkflowCommandHandler(IApplicationDbContext db, IUn
             return statuses.Error; // R6, R12
         }
 
-        // R15 (parts 04 and 05): removing a status that projects or work items are in is checked where those tables exist.
+        // R16 (part 04): a status that projects are in cannot be removed from the project workflow.
+        if (workflow.Scope == StatusScope.Project)
+        {
+            var removed = workflow.StatusIds.Where(id => !command.StatusIds.Contains(id)).ToList();
+            var projects = removed.Count == 0 ? 0 : await db.Projects.CountAsync(p => removed.Contains(p.StatusId), cancellationToken);
+            if (projects > 0)
+            {
+                return WorkflowErrors.StatusInUse(projects);
+            }
+        }
+
+        // R15 (part 05): removing a status that work items are in is checked where that table exists.
         var defined = workflow.SetDefinition(command.Name, command.StatusIds, command.InitialStatusId, command.Transitions);
         if (defined.IsFailure)
         {

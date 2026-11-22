@@ -27,7 +27,9 @@ internal sealed class DeleteRoleCommandHandler(IApplicationDbContext db, IUnitOf
             return deletable;
         }
 
-        var holders = await db.Users.CountAsync(u => u.RoleIds.Contains(command.Id), cancellationToken);
+        // R16: a system role is held through the user, a project role through project membership.
+        var holders = await db.Users.CountAsync(u => u.RoleIds.Contains(command.Id), cancellationToken)
+            + await db.ProjectMembers.CountAsync(m => m.RoleId == command.Id, cancellationToken);
         if (holders > 0)
         {
             return RoleErrors.InUse(holders); // R16

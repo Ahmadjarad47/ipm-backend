@@ -37,8 +37,20 @@ internal sealed class UpdateWorkItemTypeCommandHandler(IApplicationDbContext db,
             return workflow.Error;
         }
 
-        // R11 and R15 (later parts): disabling a type that a project uses as its default, or switching its workflow under existing
-        // items, is checked where those tables exist.
+        // R16 (part 04): a type that projects use as their default cannot be switched off.
+        if (type.IsActive && command.Active == false)
+        {
+            var asDefaultIn = await db.Projects.AsNoTracking()
+                .Where(p => p.DefaultTypeId == type.Id)
+                .Select(p => p.Code)
+                .ToListAsync(cancellationToken);
+            if (asDefaultIn.Count > 0)
+            {
+                return WorkItemTypeErrors.IsProjectDefault(asDefaultIn);
+            }
+        }
+
+        // R15 (part 05): switching the workflow of a type under existing work items is checked where that table exists.
         type.SetWorkflow(workflow.Value);
         type.Update(command.Name, command.Description, command.Color, command.Icon, command.Order ?? type.SortOrder, command.Active ?? type.IsActive);
         await unitOfWork.SaveChangesAsync(cancellationToken);
