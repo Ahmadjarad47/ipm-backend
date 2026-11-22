@@ -1,0 +1,32 @@
+### الجزء 00: الأساس
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### @host: 8080 للـ API داخل docker compose، أو 5150 مع dotnet run.
+
+@host = http://localhost:8080
+
+### صحة النظام: 200 Healthy إذا Postgres وRedis شغالين، وإلا 503 Unhealthy
+GET {{host}}/health
+
+### وصف كل الروابط (OpenAPI)
+GET {{host}}/openapi/v1.json
+
+### صفحة التوثيق (افتحها بالمتصفح): {{host}}/docs
+GET {{host}}/docs/
+
+### رابط غير موجود ← 404 problem+json بالعربي
+GET {{host}}/api/v1/does-not-exist
+
+### ─────────────────────────────────────────────
+### نمط التعديل في كل الأجزاء الجاية (مثال، مش رابط حقيقي):
+###
+### 1) القراءة بترجّع ETag:
+###    GET {{host}}/api/v1/<part>/<id>
+###    ← ETag: "1234"
+###
+### 2) التعديل والحذف لازم يرجّعوا نفس القيمة:
+###    PUT {{host}}/api/v1/<part>/<id>
+###    If-Match: "1234"
+###
+###    بدون If-Match       ← 428 Concurrency.IfMatchRequired
+###    قيمة مش ETag صالح  ← 400 Concurrency.IfMatchInvalid
+###    حدا عدّل قبلك       ← 412 Concurrency.StaleVersion

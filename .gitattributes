@@ -1,0 +1,6 @@
+# Files that run or are read on Linux must keep LF endings, even when checked out on Windows
+# (bash fails on CRLF). git archive applies these too, so the server always gets LF.
+*.sh        text eol=lf
+Caddyfile*  text eol=lf
+*.yml       text eol=lf
+.env.example text eol=lf

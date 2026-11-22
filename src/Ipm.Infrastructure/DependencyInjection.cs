@@ -1,0 +1,77 @@
+using Ipm.Application.Abstractions.Authentication;
+using Ipm.Application.Abstractions.Caching;
+using Ipm.Application.Abstractions.Data;
+using Ipm.Infrastructure.Authentication;
+using Ipm.Infrastructure.Caching;
+using Ipm.Infrastructure.Events;
+using Ipm.Infrastructure.Persistence;
+using Ipm.Infrastructure.Persistence.Auditing;
+using Ipm.Infrastructure.Persistence.Interceptors;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Ipm.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        var database = configuration.GetConnectionString("Database")
+            ?? throw new InvalidOperationException("Connection string 'Database' is not configured.");
+        var cache = configuration.GetConnectionString("Cache")
+            ?? throw new InvalidOperationException("Connection string 'Cache' is not configured.");
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUserContext, UserContext>();
+
+        AddPersistence(services, database);
+        services.AddPlaceholderAuthentication();
+
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = cache;
+            options.InstanceName = "ipm:";
+        });
+        services.AddSingleton<ICacheService, RedisCacheService>();
+
+        services.AddHealthChecks()
+            .AddNpgSql(database, name: "postgresql")
+            .AddRedis(cache, name: "redis");
+
+        return services;
+    }
+
+    private static void AddPersistence(IServiceCollection services, string connectionString)
+    {
+        services.AddScoped<DomainEventsDispatcher>();
+        services.AddScoped<AuditableEntityInterceptor>();
+        services.AddScoped<AuditLogInterceptor>();
+        services.AddScoped<DomainEventsInterceptor>();
+
+        // Interceptor order matters: stamp created/updated first, then audit (so "after" includes the stamps).
+        services.AddDbContext<ApplicationDbContext>((sp, options) => options
+            .UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.MigrationsHistoryTable("__ef_migrations_history", "public");
+                npgsql.EnableRetryOnFailure(maxRetryCount: 3);
+            })
+            .UseSnakeCaseNamingConvention()
+            .AddInterceptors(
+                sp.GetRequiredService<AuditableEntityInterceptor>(),
+                sp.GetRequiredService<AuditLogInterceptor>(),
+                sp.GetRequiredService<DomainEventsInterceptor>()));
+
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+    }
+
+    /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>
+    public static async Task ApplyMigrationsAsync(this IServiceProvider services)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await context.Database.MigrateAsync();
+    }
+}
