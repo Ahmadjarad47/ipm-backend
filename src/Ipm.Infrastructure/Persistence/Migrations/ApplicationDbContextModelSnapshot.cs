@@ -969,6 +969,87 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ipm.Domain.Work.Comment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_edited");
+
+                    b.PrimitiveCollection<List<Guid>>("MentionedUserIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("mentioned_user_ids");
+
+                    b.Property<string>("Revisions")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("revisions");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("SubjectType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("subject_type");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_comments");
+
+                    b.HasIndex("AuthorId")
+                        .HasDatabaseName("ix_comments_author_id");
+
+                    b.HasIndex("SubjectType", "SubjectId", "CreatedAt")
+                        .HasDatabaseName("ix_comments_subject_type_subject_id_created_at");
+
+                    b.ToTable("comments", "work", t =>
+                        {
+                            t.HasCheckConstraint("ck_comments_subject_type", "subject_type IN ('project', 'work-item')");
+                        });
+                });
+
             modelBuilder.Entity("Ipm.Domain.Work.ProjectCounter", b =>
                 {
                     b.Property<Guid>("ProjectId")
@@ -1117,6 +1198,65 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_work_items_parent", "parent_id IS NULL OR parent_id <> id");
 
                             t.HasCheckConstraint("ck_work_items_priority", "priority IN ('low', 'medium', 'high', 'critical')");
+                        });
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.WorkItemRelation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("RelationTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("relation_type_id");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<Guid>("TargetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_work_item_relations");
+
+                    b.HasIndex("SourceId")
+                        .HasDatabaseName("ix_work_item_relations_source_id");
+
+                    b.HasIndex("TargetId")
+                        .HasDatabaseName("ix_work_item_relations_target_id");
+
+                    b.HasIndex("RelationTypeId", "SourceId", "TargetId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_work_item_relations_relation_type_id_source_id_target_id");
+
+                    b.ToTable("work_item_relations", "work", t =>
+                        {
+                            t.HasCheckConstraint("ck_work_item_relations_self", "source_id <> target_id");
                         });
                 });
 
@@ -1474,6 +1614,16 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_project_templates_statuses_initial_status_id");
                 });
 
+            modelBuilder.Entity("Ipm.Domain.Work.Comment", b =>
+                {
+                    b.HasOne("Ipm.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_comments_users_author_id");
+                });
+
             modelBuilder.Entity("Ipm.Domain.Work.ProjectCounter", b =>
                 {
                     b.HasOne("Ipm.Domain.Projects.Project", null)
@@ -1512,6 +1662,30 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_work_items_work_item_types_type_id");
+                });
+
+            modelBuilder.Entity("Ipm.Domain.Work.WorkItemRelation", b =>
+                {
+                    b.HasOne("Ipm.Domain.Config.RelationType", null)
+                        .WithMany()
+                        .HasForeignKey("RelationTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_relations_relation_types_relation_type_id");
+
+                    b.HasOne("Ipm.Domain.Work.WorkItem", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_relations_work_items_source_id");
+
+                    b.HasOne("Ipm.Domain.Work.WorkItem", null)
+                        .WithMany()
+                        .HasForeignKey("TargetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_work_item_relations_work_items_target_id");
                 });
 
             modelBuilder.Entity("Ipm.Domain.Work.WorkItemStatusChange", b =>

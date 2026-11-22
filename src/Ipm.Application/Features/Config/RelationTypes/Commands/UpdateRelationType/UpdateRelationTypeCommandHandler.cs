@@ -35,7 +35,28 @@ internal sealed class UpdateRelationTypeCommandHandler(IApplicationDbContext db,
             return pairs.Error; // R8
         }
 
-        // R9 and R10 (part 05): once links exist, direction and the cycle rule are frozen and pairs cannot be narrowed under them.
+        // R9 (part 02, enforced from part 05b): once links exist, direction and the cycle rule are frozen and pairs cannot be narrowed under them.
+        // R10 (a switched-off type refuses new links) is checked where links are created.
+        var used = await db.WorkItemRelations.AsNoTracking().Where(r => r.RelationTypeId == type.Id).ToListAsync(cancellationToken);
+        if (used.Count > 0)
+        {
+            if (command.Directed != type.IsDirected || command.Acyclic != type.IsAcyclic)
+            {
+                return RelationTypeErrors.LockedAfterUse("لا يمكن تغيير اتجاه نوع الرابط أو منع الحلقات بعد استعماله بروابط فعلية.");
+            }
+
+            var ids = used.SelectMany(r => new[] { r.SourceId, r.TargetId }).Distinct().ToList();
+            var items = await db.WorkItems.AsNoTracking().Where(i => ids.Contains(i.Id)).Select(i => new { i.Id, i.Ref, i.TypeId }).ToDictionaryAsync(i => i.Id, cancellationToken);
+            var broken = used
+                .Where(r => items.TryGetValue(r.SourceId, out var s) && items.TryGetValue(r.TargetId, out var t) && !type.AllowsPair(s.TypeId, t.TypeId, command.AllowedPairs))
+                .Select(r => $"{items[r.SourceId].Ref} → {items[r.TargetId].Ref}")
+                .ToList();
+            if (broken.Count > 0)
+            {
+                return RelationTypeErrors.LockedAfterUse($"لا يمكن تضييق الأزواج المسموحة: توجد روابط قائمة ستصبح غير صالحة ({string.Join("، ", broken)}).");
+            }
+        }
+
         var updated = type.Update(command.Name, command.InverseName, command.Directed, command.Acyclic, command.Active ?? type.IsActive, command.AllowedPairs); // R7
         if (updated.IsFailure)
         {

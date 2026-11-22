@@ -84,6 +84,15 @@ public sealed partial class RelationType : AuditableEntity
         return Result.Success();
     }
 
+    /// <summary>R3 of part 05b: no pairs listed means every combination; an undirected type also accepts the pair the other way round.</summary>
+    public bool AllowsPair(Guid sourceTypeId, Guid targetTypeId, IReadOnlyList<TypePair>? pairs = null)
+    {
+        var list = pairs ?? AllowedPairs;
+        return list.Count == 0
+            || list.Any(p => p.SourceTypeId == sourceTypeId && p.TargetTypeId == targetTypeId)
+            || (!IsDirected && list.Any(p => p.SourceTypeId == targetTypeId && p.TargetTypeId == sourceTypeId));
+    }
+
     /// <summary>R6: a request may repeat the key, but never a different one.</summary>
     public Result EnsureKeyUnchanged(string? requestedKey) =>
         requestedKey is null || NormalizeKey(requestedKey) == Key ? Result.Success() : RelationTypeErrors.KeyImmutable;

@@ -70,7 +70,23 @@ internal static class WorkItemTransitions
             return WorkItemErrors.AssigneeRequired; // R7
         }
 
-        // R7 blockedByOpenDependencies: the relations between items arrive with part 05b, so nothing blocks an item until then.
+        if (transition.BlockedByOpenDependencies)
+        {
+            // R9 of part 05b: an item that something still open "blocks" cannot take this move.
+            var blockers = await (
+                    from r in db.WorkItemRelations.AsNoTracking()
+                    join t in db.RelationTypes on r.RelationTypeId equals t.Id
+                    join s in db.WorkItems on r.SourceId equals s.Id
+                    join st in db.Statuses on s.StatusId equals st.Id
+                    where r.TargetId == item.Id && t.Key == "blocks" && st.Category != StatusCategory.Done && st.Category != StatusCategory.Cancelled
+                    orderby s.Number
+                    select s.Ref)
+                .ToListAsync(cancellationToken);
+            if (blockers.Count > 0)
+            {
+                return WorkItemErrors.BlockedBy(blockers);
+            }
+        }
 
         // R8: until the approvals engine exists (part 06), only a holder of audit.override may make a move that needs an approval.
         var overridden = false;

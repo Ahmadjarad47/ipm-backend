@@ -40,4 +40,9 @@ public interface IApplicationDbContext
     DbSet<WorkItem> WorkItems { get; }
 
     DbSet<WorkItemStatusChange> WorkItemStatusChanges { get; }
+
+    // Part 05b: relations and comments.
+    DbSet<WorkItemRelation> WorkItemRelations { get; }
+
+    DbSet<Comment> Comments { get; }
 }

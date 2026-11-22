@@ -41,6 +41,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<WorkItemStatusChange> WorkItemStatusChanges => Set<WorkItemStatusChange>();
 
+    public DbSet<WorkItemRelation> WorkItemRelations => Set<WorkItemRelation>();
+
+    public DbSet<Comment> Comments => Set<Comment>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();

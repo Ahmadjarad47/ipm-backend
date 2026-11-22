@@ -77,6 +77,8 @@ internal sealed record Problem(JsonElement Root)
 
     public string? Code => Root.TryGetProperty("code", out var v) ? v.GetString() : null;
 
+    public string? Detail => Root.TryGetProperty("detail", out var v) ? v.GetString() : null;
+
     public string? TraceId => Root.TryGetProperty("traceId", out var v) ? v.GetString() : null;
 
     public static Problem Parse(string json) => new(JsonDocument.Parse(json).RootElement.Clone());

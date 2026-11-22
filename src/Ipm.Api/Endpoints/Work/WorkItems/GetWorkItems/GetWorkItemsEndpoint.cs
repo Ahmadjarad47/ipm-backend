@@ -19,6 +19,10 @@ internal sealed class GetWorkItemsEndpoint : IEndpoint
                     bool unassigned = false,
                     Guid? parentId = null,
                     bool? hasChildren = null,
+                    bool? hasDependency = null,
+                    bool? unblocked = null,
+                    Guid? blockedBy = null,
+                    Guid? blocking = null,
                     string? q = null,
                     bool overdue = false,
                     bool includeArchived = false,
@@ -32,7 +36,7 @@ internal sealed class GetWorkItemsEndpoint : IEndpoint
                     int pageSize = 50) =>
                 (await sender.Send(
                     new GetWorkItemsQuery(
-                        projectId, typeId, statusId, priority, assigneeId, unassigned, parentId, hasChildren, q, overdue, includeArchived,
+                        projectId, typeId, statusId, priority, assigneeId, unassigned, parentId, hasChildren, hasDependency, unblocked, blockedBy, blocking, q, overdue, includeArchived,
                         createdFrom, createdTo, dueFrom, dueTo, sort, desc, new PageRequest(page, pageSize)), ct))
                     .ToHttpResult())
             .WithTags(WorkTags.WorkItems)

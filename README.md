@@ -33,4 +33,5 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 03 سير العمل | مُسلَّم | [03-workflows](docs/modules/03-workflows.md) |
 | 04 المشاريع | مُسلَّم | [04-projects](docs/modules/04-projects.md) |
 | 05 عناصر العمل | مُسلَّم | [05-work-items](docs/modules/05-work-items.md) |
-| 05b العلاقات والتعليقات، 06–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
+| 05b العلاقات والتعليقات | مُسلَّم | [05b-relations-comments](docs/modules/05b-relations-comments.md) |
+| 06–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
