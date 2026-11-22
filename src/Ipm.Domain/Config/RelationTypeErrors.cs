@@ -25,6 +25,9 @@ public static class RelationTypeErrors
     public static readonly Error AcyclicNeedsDirected = Error.Validation(
         "RelationType.AcyclicNeedsDirected", "منع الحلقات يخص الروابط الموجّهة فقط.");
 
+    /// <summary>R9 (part 02), enforced from part 05b: once links use the type, its direction and cycle rule are frozen and pairs cannot be narrowed under them.</summary>
+    public static Error LockedAfterUse(string reason) => Error.Failure("RelationType.LockedAfterUse", reason);
+
     /// <summary>R8.</summary>
     public static readonly Error PairTypeNotFound = Error.Validation(
         "RelationType.PairTypeNotFound", "أزواج الأنواع المسموحة تتضمن نوع عمل غير موجود.");

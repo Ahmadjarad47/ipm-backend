@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Ipm.Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// Spec 05 §6. Nothing is seeded always (work items are operational data). Development only (<c>Seed:Demo</c>): the sample work items of
+/// Spec 05 §6 and 05b §6. Nothing is seeded always (work items are operational data). Development only (<c>Seed:Demo</c>): the sample work items of
 /// the four demo projects of the front end, with their types, statuses, priorities, assignees, parents, custom fields and dates relative
 /// to today. Idempotent: a project that already has items is left alone. The items are written in their final status directly,
 /// without a status history, because they are sample data.
@@ -79,6 +79,43 @@ public static class WorkSeeder
                 """,
                 cancellationToken);
         }
+
+        await SeedRelationsAndCommentsAsync(db, users, cancellationToken);
+    }
+
+    /// <summary>Spec 05b §6: the four links and the three comments of the front end sample data. Skipped when the table already has rows.</summary>
+    private static async Task SeedRelationsAndCommentsAsync(
+        ApplicationDbContext db, Dictionary<string, Guid> users, CancellationToken cancellationToken)
+    {
+        var kinds = await db.Set<RelationType>().ToDictionaryAsync(t => t.Key, t => t.Id, cancellationToken);
+        var existingItems = (await db.Set<WorkItem>().Select(i => i.Id).ToListAsync(cancellationToken)).ToHashSet();
+
+        if (!await db.Set<WorkItemRelation>().AnyAsync(cancellationToken))
+        {
+            var links = new (int Number, int ProjectNumber, int Source, int Target, string Kind)[]
+            {
+                (1, 1, 9, 8, "blocks"), (2, 1, 5, 4, "blocks"), (3, 1, 10, 4, "relates"), (4, 2, 4, 2, "relates"),
+            };
+            foreach (var l in links.Where(l => kinds.ContainsKey(l.Kind) && existingItems.Contains(ItemId(l.ProjectNumber, l.Source)) && existingItems.Contains(ItemId(l.ProjectNumber, l.Target))))
+            {
+                var relation = WorkItemRelation.Create(ItemId(l.ProjectNumber, l.Source), ItemId(l.ProjectNumber, l.Target), kinds[l.Kind], new Guid($"01970000-0000-7000-8010-{l.Number:D12}"));
+                db.Add(relation.Value);
+            }
+        }
+
+        if (!await db.Set<Comment>().AnyAsync(cancellationToken))
+        {
+            var now = DateTimeOffset.UtcNow;
+            var erp = await db.Set<Project>().Where(p => p.Code == "ERP").Select(p => p.Id).SingleOrDefaultAsync(cancellationToken);
+            if (users.TryGetValue("reem", out var reem) && users.TryGetValue("fahad", out var fahad) && users.TryGetValue("khaled", out var khaled) && existingItems.Contains(ItemId(1, 4)) && erp != Guid.Empty)
+            {
+                db.Add(Comment.Create(CommentSubjectType.WorkItem, ItemId(1, 4), reem, "تم الاتفاق مع فريق المالية على أن تكون الموافقة على ثلاث مراحل.", [], now.AddDays(-3), new Guid("01970000-0000-7000-8011-000000000001")));
+                db.Add(Comment.Create(CommentSubjectType.WorkItem, ItemId(1, 4), fahad, "بانتظار إصلاح خطأ الضريبة ERP-105 قبل الدمج.", [], now.AddDays(-1), new Guid("01970000-0000-7000-8011-000000000002")));
+                db.Add(Comment.Create(CommentSubjectType.Project, erp, khaled, "اجتماع المراجعة الأسبوعي يوم الأحد الساعة العاشرة.", [], now.AddDays(-5), new Guid("01970000-0000-7000-8011-000000000003")));
+            }
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private sealed record Seed(

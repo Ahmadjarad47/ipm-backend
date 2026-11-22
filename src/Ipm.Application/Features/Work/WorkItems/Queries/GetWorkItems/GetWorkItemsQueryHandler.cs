@@ -91,6 +91,32 @@ internal sealed class GetWorkItemsQueryHandler(IApplicationDbContext db, IUserCo
                 : items.Where(i => !db.WorkItems.Any(c => c.ParentId == i.Id && !c.IsArchived));
         }
 
+        // R10 of part 05b: the filters built on the links between items. A blocker is a "blocks" link from an item that is not yet done or cancelled.
+        if (query.HasDependency is { } hasDependency)
+        {
+            items = hasDependency
+                ? items.Where(i => db.WorkItemRelations.Any(r => r.SourceId == i.Id || r.TargetId == i.Id))
+                : items.Where(i => !db.WorkItemRelations.Any(r => r.SourceId == i.Id || r.TargetId == i.Id));
+        }
+
+        if (query.Unblocked is { } unblocked)
+        {
+            var openBlocked = OpenBlockedBy();
+            items = unblocked
+                ? items.Where(i => !openBlocked.Any(r => r.TargetId == i.Id))
+                : items.Where(i => openBlocked.Any(r => r.TargetId == i.Id));
+        }
+
+        if (query.BlockedBy is { } blockedBy)
+        {
+            items = items.Where(i => db.WorkItemRelations.Any(r => r.SourceId == blockedBy && r.TargetId == i.Id && db.RelationTypes.Any(t => t.Id == r.RelationTypeId && t.Key == BlocksKey)));
+        }
+
+        if (query.Blocking is { } blocking)
+        {
+            items = items.Where(i => db.WorkItemRelations.Any(r => r.TargetId == blocking && r.SourceId == i.Id && db.RelationTypes.Any(t => t.Id == r.RelationTypeId && t.Key == BlocksKey)));
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
@@ -128,6 +154,15 @@ internal sealed class GetWorkItemsQueryHandler(IApplicationDbContext db, IUserCo
 
         return items;
     }
+
+    private const string BlocksKey = "blocks";
+
+    /// <summary>The "blocks" links whose source is still open.</summary>
+    private IQueryable<WorkItemRelation> OpenBlockedBy() =>
+        db.WorkItemRelations.Where(r =>
+            db.RelationTypes.Any(t => t.Id == r.RelationTypeId && t.Key == BlocksKey)
+            && db.WorkItems.Any(s => s.Id == r.SourceId
+                && !db.Statuses.Any(st => st.Id == s.StatusId && (st.Category == StatusCategory.Done || st.Category == StatusCategory.Cancelled))));
 
     private IQueryable<WorkItem> Sort(IQueryable<WorkItem> items, GetWorkItemsQuery query)
     {

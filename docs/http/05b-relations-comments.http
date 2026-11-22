@@ -1,0 +1,146 @@
+### الجزء 05b: العلاقات بين العناصر والتعليقات
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### عضو الفريق (fahad / Demo12345) بينشئ الروابط ويعلّق، لكن حذف الرابط بصلاحية workitem.relations.delete (مدير المشروع).
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### مراجع نحتاجها
+# @name projects
+GET {{api}}/projects?q=erp
+Authorization: Bearer {{token}}
+
+###
+@projectId = {{projects.response.body.$.items[0].id}}
+
+###
+# @name relationTypes
+GET {{api}}/relation-types
+Authorization: Bearer {{token}}
+
+###
+@blocksId = {{relationTypes.response.body.$[?(@.key=='blocks')].id}}
+@relatesId = {{relationTypes.response.body.$[?(@.key=='relates')].id}}
+
+###
+# @name items
+GET {{api}}/work-items?projectId={{projectId}}&sort=ref&pageSize=12
+Authorization: Bearer {{token}}
+
+###
+@itemA = {{items.response.body.$.items[10].id}}
+@itemB = {{items.response.body.$.items[11].id}}
+
+### ─── الروابط ─────────────────────────────────
+
+### إنشاء رابط (workitem.relations.create): النوع مفعّل وبيسمح بزوج الأنواع، بدون تكرار ولا حلقة. الرابط بين مشروعين مرفوض حالياً
+### sourceVersion و targetVersion اختياريان لفحص التزامن (412)
+# @name link
+POST {{api}}/relations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sourceId": "{{itemA}}", "targetId": "{{itemB}}", "relationTypeId": "{{relatesId}}" }
+
+###
+@relationId = {{link.response.body.$.id}}
+
+### روابط عنصر من الجهتين: الاسم للصادر والاسم العكسي للوارد، ومعها العنصر الثاني
+GET {{api}}/work-items/{{itemA}}/relations
+Authorization: Bearer {{token}}
+
+### روابط المشروع كله
+GET {{api}}/projects/{{projectId}}/relations
+Authorization: Bearer {{token}}
+
+### فلاتر القائمة المبنية على الروابط: hasDependency unblocked blockedBy blocking
+GET {{api}}/work-items?projectId={{projectId}}&unblocked=false
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/work-items?projectId={{projectId}}&blockedBy={{itemA}}
+Authorization: Bearer {{token}}
+
+### حذف رابط (workitem.relations.delete)
+DELETE {{api}}/relations/{{relationId}}
+Authorization: Bearer {{token}}
+
+### ─── التعليقات ───────────────────────────────
+
+### إضافة تعليق على عنصر (comments.create). subjectType: project أو work-item. @username للأعضاء بتتخزّن بـ mentionedUserIds
+# @name comment
+POST {{api}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "subjectType": "work-item", "subjectId": "{{itemA}}", "body": "شكراً @fahad على المراجعة" }
+
+###
+@commentId = {{comment.response.body.$.id}}
+@commentEtag = {{comment.response.headers.ETag}}
+
+### تعليق على المشروع
+POST {{api}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "subjectType": "project", "subjectId": "{{projectId}}", "body": "اجتماع المراجعة يوم الأحد" }
+
+### تعليقات عنصر (الأقدم أولاً، المحذوف بدون نص)
+GET {{api}}/comments?subjectType=work-item&subjectId={{itemA}}&page=1&pageSize=50
+Authorization: Bearer {{token}}
+
+### تعديل تعليقك (If-Match، comments.edit_own) خلال 24 ساعة
+# @name edited
+PUT {{api}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+If-Match: {{commentEtag}}
+Content-Type: application/json
+
+{ "body": "شكراً @fahad على المراجعة والملاحظات" }
+
+###
+@commentEtag2 = {{edited.response.headers.ETag}}
+
+### سجل النصوص: الأولى هي الأصل
+GET {{api}}/comments/{{commentId}}/revisions
+Authorization: Bearer {{token}}
+
+### حذف تعليق (If-Match): المؤلف أو من معه files.delete. حذف ناعم
+DELETE {{api}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+If-Match: {{commentEtag2}}
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### ربط عنصر بنفسه ← 422 Relation.SelfLink
+POST {{api}}/relations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sourceId": "{{itemA}}", "targetId": "{{itemA}}", "relationTypeId": "{{blocksId}}" }
+
+### نص تعليق فاضي ← 400
+POST {{api}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "subjectType": "work-item", "subjectId": "{{itemA}}", "body": "   " }
+
+### تعديل تعليق بدون If-Match ← 428
+PUT {{api}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "body": "بدون نسخة" }

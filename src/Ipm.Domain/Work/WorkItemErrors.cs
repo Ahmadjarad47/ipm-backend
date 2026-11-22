@@ -75,6 +75,10 @@ public static class WorkItemErrors
         "WorkItem.AssigneeRequired", "هذا الانتقال يتطلب أن يكون للعنصر مسؤول.");
 
     /// <summary>R7.</summary>
+    public static Error BlockedBy(IEnumerable<string> refs) => Error.Failure(
+        "WorkItem.BlockedByDependencies", $"لا يمكن تنفيذ الانتقال: العنصر محجوب بواسطة {string.Join("، ", refs)}.");
+
+    /// <summary>R7.</summary>
     public static readonly Error BlockedByDependencies = Error.Failure(
         "WorkItem.BlockedByDependencies", "العنصر محجوب باعتماديات مفتوحة.");
 
