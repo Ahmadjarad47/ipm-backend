@@ -29,7 +29,17 @@ internal sealed class UpdateWorkItemTypeCommandHandler(IApplicationDbContext db,
             return keyUnchanged.Error;
         }
 
-        // R11 (later parts): disabling a type that a project uses as its default, or that has items, is checked where those tables exist.
+        // R13: a requested workflow must be a work item workflow. Omitted keeps the current one (or binds the default for a row from before part 03).
+        var requested = command.WorkflowId ?? type.WorkflowId;
+        var workflow = await WorkflowBinding.ResolveAsync(db, requested, cancellationToken);
+        if (workflow.IsFailure)
+        {
+            return workflow.Error;
+        }
+
+        // R11 and R15 (later parts): disabling a type that a project uses as its default, or switching its workflow under existing
+        // items, is checked where those tables exist.
+        type.SetWorkflow(workflow.Value);
         type.Update(command.Name, command.Description, command.Color, command.Icon, command.Order ?? type.SortOrder, command.Active ?? type.IsActive);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return type.ToResponse();

@@ -24,4 +24,12 @@ public static class WorkItemTypeErrors
     /// <summary>R5.</summary>
     public static readonly Error ChildTypeNotFound = Error.Validation(
         "WorkItemType.ChildTypeNotFound", "أحد الأنواع الفرعية المختارة غير موجود.");
+
+    /// <summary>R13.</summary>
+    public static readonly Error WorkflowInvalid = Error.Validation(
+        "WorkItemType.WorkflowInvalid", "سير العمل المختار غير موجود أو ليس سير عمل لعناصر العمل.");
+
+    /// <summary>R14.</summary>
+    public static readonly Error WorkflowRequired = Error.Validation(
+        "WorkItemType.WorkflowRequired", "اختر سير عمل للنوع: لا يوجد سير العمل الافتراضي (standard).");
 }

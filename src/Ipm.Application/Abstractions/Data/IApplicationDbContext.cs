@@ -19,4 +19,9 @@ public interface IApplicationDbContext
     DbSet<WorkItemType> WorkItemTypes { get; }
 
     DbSet<RelationType> RelationTypes { get; }
+
+    // Part 03: statuses and workflows.
+    DbSet<Status> Statuses { get; }
+
+    DbSet<Workflow> Workflows { get; }
 }

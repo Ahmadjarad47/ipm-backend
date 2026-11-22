@@ -9,4 +9,5 @@ public sealed record CreateWorkItemTypeRequest(
     string Color,
     WorkItemIcon Icon,
     int? Order,
-    bool? Active);
+    bool? Active,
+    Guid? WorkflowId);

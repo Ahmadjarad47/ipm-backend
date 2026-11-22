@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using static Ipm.IntegrationTests.Config.ConfigApi;
 using static Ipm.IntegrationTests.Identity.IdentityApi;
 
 namespace Ipm.IntegrationTests.Config;
@@ -47,4 +48,47 @@ internal static class ConfigApi
 
     public static object Field(string key, string type = "text", object? options = null, double? min = null, double? max = null, int order = 0) =>
         new { key, label = "حقل", type, required = false, options, min, max, showInList = false, showOnCard = false, order };
+}
+
+/// <summary>Helpers for statuses and workflows (part 03).</summary>
+internal static class WorkflowApi
+{
+    public static async Task<JsonElement> StatusByKeyAsync(HttpClient client, string scope, string key)
+    {
+        var list = await ReadAsync(await client.GetAsync(new Uri($"/api/v1/statuses?scope={scope}", UriKind.Relative)));
+        return list.EnumerateArray().Single(s => s.GetProperty("key").GetString() == key);
+    }
+
+    public static async Task<JsonElement> WorkflowByKeyAsync(HttpClient client, string key)
+    {
+        var list = await ReadAsync(await client.GetAsync(new Uri("/api/v1/workflows", UriKind.Relative)));
+        return list.EnumerateArray().Single(w => w.GetProperty("key").GetString() == key);
+    }
+
+    public static async Task<(Guid Id, EntityTagHeaderValue ETag)> CreateStatusAsync(
+        HttpClient admin, string key, string scope = "work-item", string category = "active", string name = "حالة اختبار")
+    {
+        var response = await admin.PostAsJsonAsync(
+            new Uri("/api/v1/statuses", UriKind.Relative),
+            new { key, name, description = "وصف", color = "#112233", category, scope, order = 9, active = true });
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        return ((await ReadAsync(response)).GetProperty("id").GetGuid(), response.Headers.ETag!);
+    }
+
+    public static object Move(Guid from, Guid to, string? permission = null, bool assignee = false, bool approval = false, bool dependencies = false) =>
+        new { fromStatusId = from, toStatusId = to, permission, requiresAssignee = assignee, requiresApproval = approval, blockedByOpenDependencies = dependencies };
+
+    public static object WorkflowBody(string key, Guid[] statusIds, Guid initial, object[] transitions, string scope = "work-item", string name = "سير اختبار") =>
+        new { key, name, scope, statusIds, initialStatusId = initial, transitions };
+
+    /// <summary>Creates a work item workflow of two fresh statuses (a to b) and returns everything a test needs to edit it.</summary>
+    public static async Task<(Guid Id, EntityTagHeaderValue ETag, Guid A, Guid B)> CreateWorkflowAsync(HttpClient admin, string key)
+    {
+        var (a, _) = await CreateStatusAsync(admin, NewKey("sa"));
+        var (b, _) = await CreateStatusAsync(admin, NewKey("sb"));
+        var response = await admin.PostAsJsonAsync(
+            new Uri("/api/v1/workflows", UriKind.Relative), WorkflowBody(key, [a, b], a, [Move(a, b)]));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        return ((await ReadAsync(response)).GetProperty("id").GetGuid(), response.Headers.ETag!, a, b);
+    }
 }

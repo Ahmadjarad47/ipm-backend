@@ -13,6 +13,7 @@ internal static class WorkItemTypeMapping
         type.Icon,
         type.SortOrder,
         type.IsActive,
+        type.WorkflowId,
         type.Fields,
         type.AllowedChildTypeIds,
         type.Version);
