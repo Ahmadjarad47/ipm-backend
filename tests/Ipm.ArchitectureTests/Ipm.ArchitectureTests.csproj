@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Enforces the dependency rules between layers on every build/test run. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Ipm.Domain\Ipm.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Ipm.Application\Ipm.Application.csproj" />
+    <ProjectReference Include="..\..\src\Ipm.Infrastructure\Ipm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Ipm.Api\Ipm.Api.csproj" />
+  </ItemGroup>
+</Project>
