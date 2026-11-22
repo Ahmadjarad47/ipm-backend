@@ -1,10 +1,14 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Ipm.Api.Endpoints;
+using Ipm.Infrastructure;
 using Ipm.Infrastructure.Persistence;
 using Ipm.IntegrationTests.Probe;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
@@ -18,6 +22,9 @@ namespace Ipm.IntegrationTests.Infrastructure;
 /// </summary>
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public const string AdminUsername = "admin";
+    public const string AdminPassword = "Admin12345";
+    public const string DemoPassword = "Demo12345";
 
     // Same images as docker-compose.yml.
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17")
@@ -43,7 +50,22 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreatedAsync();
         }
 
+        await Services.SeedDatabaseAsync(Services.GetRequiredService<IConfiguration>());
     }
+
+    /// <summary>A client signed in as the given user (Bearer access token). The response of the sign-in is kept for cookie tests.</summary>
+    public async Task<HttpClient> SignedInClientAsync(string username, string password)
+    {
+        var client = CreateClient();
+        var response = await client.PostAsJsonAsync(new Uri("/api/v1/auth/login", UriKind.Relative), new { username, password });
+        response.EnsureSuccessStatusCode();
+
+        var session = await response.Content.ReadFromJsonAsync<SessionDto>();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session!.AccessToken);
+        return client;
+    }
+
+    public Task<HttpClient> AdminClientAsync() => SignedInClientAsync(AdminUsername, AdminPassword);
 
     public new async Task DisposeAsync()
     {
@@ -67,6 +89,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("OpenApi:Enabled", "true");
         builder.UseSetting("Database:MigrateOnStartup", "false");
         builder.UseSetting("Serilog:WriteTo:1:Args:serverUrl", "http://localhost:1");
+        builder.UseSetting("Seed:OnStartup", "false");
+        builder.UseSetting("Seed:Demo", "true");
+        builder.UseSetting("Seed:AdminUsername", AdminUsername);
+        builder.UseSetting("Seed:AdminEmail", "admin@factory.example");
+        builder.UseSetting("Seed:AdminPassword", AdminPassword);
+        builder.UseSetting("Seed:DemoPassword", DemoPassword);
+        builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-0123456789-abcdef");
+        builder.UseSetting("RateLimiting:AuthPerMinute", "1000");
 
         builder.ConfigureServices(services =>
         {
@@ -76,6 +106,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         });
     }
 }
+
+public sealed record SessionDto(string AccessToken, DateTimeOffset ExpiresAt, bool MustChangePassword);
 
 [CollectionDefinition(Name)]
 public sealed class ApiCollection : ICollectionFixture<ApiFactory>

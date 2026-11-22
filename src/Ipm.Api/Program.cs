@@ -1,9 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Ipm.Api.Endpoints;
+using Ipm.Api.Endpoints.Identity.Auth.Common;
 using Ipm.Api.Infrastructure;
 using Ipm.Application;
 using Ipm.Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using Serilog;
@@ -16,7 +19,7 @@ builder.Services
     .AddApplication()
     .AddInfrastructure(builder.Configuration);
 
-// Enums travel as kebab-case text, the same as the front end's string unions and the database (on-hold, in-progress).
+// Enums travel as kebab-case text, the same as the front end string unions and the database (on-hold, in-progress).
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower, allowIntegerValues: false)));
 
@@ -26,7 +29,7 @@ builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document,
 {
     document.Info.Title = "IPM API";
     document.Info.Description = "روابط نظام إدارة المشاريع IPM. كل جزء من النظام مجموعة مستقلة. "
-        + "كل الروابط تحتاج تسجيل دخول (Authorization: Bearer <accessToken>) ما عدا اللي مذكور غير هيك. "
+        + "سجّل الدخول من POST /api/v1/auth/login ثم أرسل Authorization: Bearer <accessToken> مع كل رابط (ما عدا رابطي الدخول والتجديد). "
         + "قراءة سجل واحد ترجع ETag، والتعديل والحذف يطلبان If-Match بنفس القيمة.";
 
     document.Components ??= new OpenApiComponents();
@@ -42,6 +45,34 @@ builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document,
 }));
 builder.Services.AddEndpoints(typeof(Program).Assembly);
 
+// Behind a reverse proxy the client IP and scheme come from X-Forwarded-*. The proxy address inside the Docker network
+// is not fixed, so known proxies are cleared; this is safe only because the API port is not published and every
+// request reaches it through the proxy.
+var behindProxy = builder.Configuration.GetValue<bool>("ForwardedHeaders:Enabled");
+if (behindProxy)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        options.ForwardLimit = 1;
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+}
+
+// Brute-force protection on sign-in and refresh, per client IP (R1, R2).
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(SessionCookie.RateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPerMinute", 10),
+            Window = TimeSpan.FromMinutes(1),
+        }));
+});
+
 var app = builder.Build();
 
 if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
@@ -49,11 +80,23 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
     await app.Services.ApplyMigrationsAsync();
 }
 
+if (app.Configuration.GetValue<bool>("Seed:OnStartup"))
+{
+    await app.Services.SeedDatabaseAsync(app.Configuration);
+}
+
+if (behindProxy)
+{
+    app.UseForwardedHeaders();
+}
+
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
 app.UseAuthentication();
+app.UseMiddleware<MustChangePasswordMiddleware>();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 if (app.Configuration.GetValue<bool>("OpenApi:Enabled"))
 {

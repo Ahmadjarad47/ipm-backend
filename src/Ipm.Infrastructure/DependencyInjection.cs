@@ -7,6 +7,7 @@ using Ipm.Infrastructure.Events;
 using Ipm.Infrastructure.Persistence;
 using Ipm.Infrastructure.Persistence.Auditing;
 using Ipm.Infrastructure.Persistence.Interceptors;
+using Ipm.Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IUserContext, UserContext>();
 
         AddPersistence(services, database);
-        services.AddPlaceholderAuthentication();
+        services.AddIdentityAuthentication(configuration);
 
         services.AddStackExchangeRedisCache(options =>
         {
@@ -65,6 +66,12 @@ public static class DependencyInjection
 
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+    }
+
+    /// <summary>What every installation needs (built-in roles, the administrator) and, with <c>Seed:Demo</c>, demo data. One seeder per part, in dependency order.</summary>
+    public static async Task SeedDatabaseAsync(this IServiceProvider services, IConfiguration configuration)
+    {
+        await IdentitySeeder.SeedAsync(services, configuration);
     }
 
     /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>

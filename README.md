@@ -10,6 +10,7 @@ docker compose up -d --build     # Postgres 55432، Redis 6379، Seq 5341، ال
 - الصحة: http://localhost:8080/health
 - التوثيق: http://localhost:8080/docs (الوصف: `/openapi/v1.json`)
 - أمثلة الروابط: [docs/http](docs/http)
+- حسابات التطوير: `admin` / `Admin12345`، وباقي المستخدمين (`khaled`، `noura`، `fahad`، `reem`، `abdullah`) كلمة سرهم `Demo12345`
 
 بدون الـ API بالحاوية: `docker compose up -d postgres redis seq` ثم `dotnet run --project src/Ipm.Api`.
 
@@ -27,4 +28,5 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | الجزء | الحالة | المواصفة |
 |---|---|---|
 | 00 الأساس | مُسلَّم | [00-foundation](docs/modules/00-foundation.md) |
-| 01–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
+| 01 الهوية والصلاحيات | مُسلَّم | [01-identity](docs/modules/01-identity.md) |
+| 02–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |

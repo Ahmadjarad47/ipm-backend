@@ -1,27 +1,46 @@
 using Ipm.Application.Abstractions.Data;
 using Ipm.Domain.Common;
+using Ipm.Domain.Identity;
+using Ipm.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Ipm.Infrastructure.Persistence;
 
 /// <summary>
-/// The single EF Core context over PostgreSQL. Each business module maps its tables in its own schema
-/// through IEntityTypeConfiguration classes (discovered from this assembly). Part 01 turns it into the
-/// ASP.NET Core Identity store.
+/// The single EF Core context over PostgreSQL. It is also the ASP.NET Core Identity user store
+/// (<see cref="User"/> is the user; we do not use Identity roles, our <see cref="Role"/> carries permissions).
+/// Each business module maps its tables in its own schema through IEntityTypeConfiguration classes.
 /// </summary>
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : DbContext(options), IUnitOfWork, IApplicationDbContext
+    : IdentityUserContext<User, Guid>(options), IUnitOfWork, IApplicationDbContext
 {
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
+
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AssemblyReference).Assembly);
-        ApplyEntityConventions(modelBuilder);
+        // Identity's own mapping first, then ours (which renames its tables into the identity schema).
+        base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(AssemblyReference).Assembly);
+        MapIdentityTables(builder);
+        ApplyEntityConventions(builder);
+    }
+
+    private static void MapIdentityTables(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("user_claims", Schemas.Identity);
+        modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins", Schemas.Identity);
+        modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("user_tokens", Schemas.Identity);
     }
 
     /// <summary>
     /// Rules every <see cref="Entity"/> gets without repeating them in each configuration:
-    /// <c>Version</c> is PostgreSQL's <c>xmin</c> (optimistic concurrency), domain events are not columns.
+    /// <c>Version</c> is PostgreSQL xmin (optimistic concurrency), domain events are not columns.
     /// </summary>
     private static void ApplyEntityConventions(ModelBuilder modelBuilder)
     {

@@ -1,3 +1,6 @@
+using Ipm.Domain.Identity;
+using Microsoft.EntityFrameworkCore;
+
 namespace Ipm.Application.Abstractions.Data;
 
 /// <summary>
@@ -6,4 +9,8 @@ namespace Ipm.Application.Abstractions.Data;
 /// </summary>
 public interface IApplicationDbContext
 {
+    // Part 01: identity.
+    DbSet<User> Users { get; }
+
+    DbSet<Role> Roles { get; }
 }

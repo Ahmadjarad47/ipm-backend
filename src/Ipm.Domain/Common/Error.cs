@@ -10,6 +10,7 @@ public enum ErrorType
     Forbidden = 4,
     PreconditionFailed = 5,
     Unauthorized = 6,
+    TooManyRequests = 7,
 }
 
 /// <summary>
@@ -33,6 +34,8 @@ public sealed record Error(string Code, string Description, ErrorType Type)
     public static Error PreconditionFailed(string code, string description) => new(code, description, ErrorType.PreconditionFailed);
 
     public static Error Unauthorized(string code, string description) => new(code, description, ErrorType.Unauthorized);
+
+    public static Error TooManyRequests(string code, string description) => new(code, description, ErrorType.TooManyRequests);
 
     /// <summary>The record was saved by someone else since the caller read it (stale ETag / version).</summary>
     public static readonly Error StaleVersion = PreconditionFailed(
