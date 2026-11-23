@@ -1,0 +1,100 @@
+### الجزء 07: ربط Git (المستودعات، الويب هوك الموقّع، الأحداث، المزامنة، مؤشر التطوير)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### استقبال الويب هوك بدون تسجيل دخول: التوقيع هو الاعتماد (HMAC-SHA256 على "<timestamp>.<body>").
+### توقيع تجريبي بـ openssl (Gitea):  printf '%s' "$TS.$BODY" | openssl dgst -sha256 -hmac "$SECRET" -hex
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### مشروع ERP
+# @name projects
+GET {{api}}/projects?search=ERP
+Authorization: Bearer {{token}}
+
+###
+@projectId = {{projects.response.body.$.items[0].id}}
+
+### مستودعات المشروع (بدون أسرار)
+GET {{api}}/projects/{{projectId}}/repositories
+Authorization: Bearer {{token}}
+
+### ربط مستودع (الرابط https فقط وبدون عناوين داخلية). السرّ بيرجع مرة وحدة إذا ما حدّدته
+# @name connect
+POST {{api}}/projects/{{projectId}}/repositories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "provider": "gitea", "name": "acme/demo-app", "url": "https://git.example.com/acme/demo-app", "defaultBranch": "main", "accessToken": "token-من-المزوّد", "webhookSecret": "a-long-shared-secret-16+" }
+
+###
+@repoId = {{connect.response.body.id}}
+
+### تدوير السرّ (القديم بيبطل فوراً)
+POST {{api}}/projects/{{projectId}}/repositories/{{repoId}}/rotate-secret
+Authorization: Bearer {{token}}
+
+### مزامنة يدوية (آخر 50 كوميت من الفرع الافتراضي) بصلاحية git.sync
+POST {{api}}/projects/{{projectId}}/git-sync
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "repositoryId": "{{repoId}}" }
+
+### استقبال push (Gitea). بدّل X-Gitea-Signature بتوقيع صحيح وX-Delivery-Timestamp بالوقت الحالي (ثواني يونكس)
+POST {{api}}/webhooks/gitea/{{repoId}}
+Content-Type: application/json
+X-Gitea-Event: push
+X-Gitea-Delivery: demo-delivery-001
+X-Delivery-Timestamp: 1790000000
+X-Gitea-Signature: <hex-hmac>
+
+{ "ref": "refs/heads/feature/ERP-104-payments", "commits": [ { "id": "0123456789abcdef0123456789abcdef01234567", "message": "ERP-104: تحسين شاشة الدفعات", "url": "https://git.example.com/acme/demo-app/commit/0123456", "author": { "username": "dev" } } ] }
+
+### GitHub: X-Hub-Signature-256: sha256=<hex>  ·  GitLab: X-Gitlab-Token: <السرّ نفسه>  (مع X-Gitlab-Event: Push Hook)
+
+### نمط رقم المهمة (If-Match = ETag المشروع). null يرجّع الافتراضي
+# @name projectGet
+GET {{api}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+###
+PUT {{api}}/projects/{{projectId}}/ref-pattern
+Authorization: Bearer {{token}}
+If-Match: {{projectGet.response.headers.ETag}}
+Content-Type: application/json
+
+{ "refPattern": "\\[(ERP-\\d+)\\]" }
+
+### سجل التسليمات (الأحدث أولاً)
+GET {{api}}/git/deliveries?projectId={{projectId}}
+Authorization: Bearer {{token}}
+
+### إعادة معالجة تسليم فاشل
+POST {{api}}/git/deliveries/00000000-0000-0000-0000-000000000000/redeliver
+Authorization: Bearer {{token}}
+
+### أحداث Git (kind: push أو pull-request أو merge)
+GET {{api}}/git-events?projectId={{projectId}}&workItemRef=ERP-104
+Authorization: Bearer {{token}}
+
+### ربط/فك ربط يدوي لحدث بمهمة
+POST {{api}}/git-events/00000000-0000-0000-0000-000000000000/link
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "ref": "ERP-105" }
+
+### مؤشر التطوير على العنصر: dev { commits, openPrs, mergedPrs }
+GET {{api}}/work-items?projectId={{projectId}}&search=ERP-104
+Authorization: Bearer {{token}}

@@ -11,6 +11,7 @@ public enum ErrorType
     PreconditionFailed = 5,
     Unauthorized = 6,
     TooManyRequests = 7,
+    BadGateway = 8,
 }
 
 /// <summary>
@@ -36,6 +37,9 @@ public sealed record Error(string Code, string Description, ErrorType Type)
     public static Error Unauthorized(string code, string description) => new(code, description, ErrorType.Unauthorized);
 
     public static Error TooManyRequests(string code, string description) => new(code, description, ErrorType.TooManyRequests);
+
+    /// <summary>An external service (a Git server) did not answer as needed.</summary>
+    public static Error BadGateway(string code, string description) => new(code, description, ErrorType.BadGateway);
 
     /// <summary>The record was saved by someone else since the caller read it (stale ETag / version).</summary>
     public static readonly Error StaleVersion = PreconditionFailed(

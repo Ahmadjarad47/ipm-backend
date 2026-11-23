@@ -2,6 +2,7 @@ using Ipm.Application.Abstractions.Data;
 using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
+using Ipm.Domain.Git;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
 using Ipm.Domain.Work;
@@ -51,6 +52,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
 
     public DbSet<Delegation> Delegations => Set<Delegation>();
+
+    public DbSet<GitRepository> GitRepositories => Set<GitRepository>();
+
+    public DbSet<GitEvent> GitEvents => Set<GitEvent>();
+
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 

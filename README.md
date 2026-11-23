@@ -36,4 +36,5 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 05b العلاقات والتعليقات | مُسلَّم | [05b-relations-comments](docs/modules/05b-relations-comments.md) |
 | 06 محرك الموافقات | مُسلَّم | [06-approvals](docs/modules/06-approvals.md) |
 | 06b التعديل الحساس | مُسلَّم | [06b-sensitive-changes](docs/modules/06b-sensitive-changes.md) |
-| 07–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
+| 07 ربط Git | مُسلَّم | [07-git-integration](docs/modules/07-git-integration.md) |
+| 08–09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |
