@@ -7,8 +7,15 @@ namespace Ipm.Domain.Approvals;
 /// at submission are columns of the request itself, so every decision moves its version (ETag) and shows in audit_log. A change of a
 /// protected field supersedes a pending request (R11); an approved one authorizes exactly one action, once, for a limited time (R9).
 /// </summary>
-public sealed class ApprovalRequest : AuditableEntity
+public sealed class ApprovalRequest : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditProjectId => ProjectId;
+
+    Guid? IAuditSubject.AuditWorkItemId => SubjectType == ApprovalSubjectType.WorkItem ? SubjectId : null;
+
+    string? IAuditSubject.AuditLabel => Title;
+
+
     public const int TitleMaxLength = 300;
 
     private ApprovalRequest() { }
@@ -74,6 +81,7 @@ public sealed class ApprovalRequest : AuditableEntity
         request.TargetStatusId = targetStatusId;
         request.ProposedChanges = [.. proposedChanges ?? []];
         request.Start(snapshot, resolved, now, revision: 1);
+        request.RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalStageOpened(request.Id));
         return request;
     }
 
@@ -131,12 +139,15 @@ public sealed class ApprovalRequest : AuditableEntity
 
         Decisions = [.. Decisions, new ApprovalDecision(CurrentStage, deciderId, decision, comment?.Trim() ?? string.Empty, now, revision, onBehalfOf)];
 
+        RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalDecided(Id, deciderId, decision.ToString()));
+
         switch (decision)
         {
             case DecisionKind.Approve when Stages.Exists(s => s.Order == CurrentStage + 1):
                 CurrentStage++;
                 StageDueAt = DueOf(CurrentStage, now);
                 LastRemindedAt = null;
+                RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalStageOpened(Id));
                 break;
             case DecisionKind.Approve:
                 Status = ApprovalStatus.Approved;
@@ -167,6 +178,7 @@ public sealed class ApprovalRequest : AuditableEntity
         }
 
         Start(snapshot, resolved, now, Revision + 1);
+        RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalStageOpened(Id));
         return Result.Success();
     }
 
@@ -181,6 +193,7 @@ public sealed class ApprovalRequest : AuditableEntity
         Status = ApprovalStatus.Superseded;
         CurrentStage = 0;
         StageDueAt = null;
+        RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalSuperseded(Id));
         return true;
     }
 
@@ -204,6 +217,7 @@ public sealed class ApprovalRequest : AuditableEntity
         }
 
         LastRemindedAt = now;
+        RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalReminded(Id));
         return Result.Success();
     }
 

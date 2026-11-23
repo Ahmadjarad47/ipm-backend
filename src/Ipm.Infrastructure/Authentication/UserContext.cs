@@ -12,6 +12,8 @@ public sealed class UserContext(IHttpContextAccessor httpContextAccessor) : IUse
 {
     public bool IsAuthenticated => httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 
+    public bool InRequest => httpContextAccessor.HttpContext is not null;
+
     public Guid? UserId
     {
         get

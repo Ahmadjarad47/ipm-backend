@@ -1,3 +1,4 @@
+using Ipm.Domain.Activity;
 using Ipm.Domain.Approvals;
 using Ipm.Domain.Config;
 using Ipm.Domain.Git;
@@ -61,4 +62,6 @@ public interface IApplicationDbContext
     DbSet<GitEvent> GitEvents { get; }
 
     DbSet<WebhookDelivery> WebhookDeliveries { get; }
+
+    DbSet<Notification> Notifications { get; }
 }

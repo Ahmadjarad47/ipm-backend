@@ -37,5 +37,5 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 06 محرك الموافقات | مُسلَّم | [06-approvals](docs/modules/06-approvals.md) |
 | 06b التعديل الحساس | مُسلَّم | [06b-sensitive-changes](docs/modules/06b-sensitive-changes.md) |
 | 07 ربط Git | مُسلَّم | [07-git-integration](docs/modules/07-git-integration.md) |
-| 08 النشاط والتدقيق والإشعارات | مسودة تنتظر الموافقة | [08-activity-audit-notifications](docs/modules/08-activity-audit-notifications.md) |
+| 08 النشاط والتدقيق والإشعارات | مُسلَّم | [08-activity-audit-notifications](docs/modules/08-activity-audit-notifications.md) |
 | 09 | لم يبدأ | [ROADMAP](docs/ROADMAP.md) |

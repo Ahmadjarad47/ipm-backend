@@ -1,6 +1,6 @@
 # الجزء 08: النشاط والتدقيق والإشعارات — المواصفة
 
-> المرحلة 0 من [خط الإنتاج](../MODULE-PIPELINE.md). الحالة: **مسودة تنتظر الموافقة**.
+> المرحلة 0 من [خط الإنتاج](../MODULE-PIPELINE.md). الحالة: **مُسلَّم**.
 > يعتمد على: [الجزء 05](05-work-items.md) و[06](06-approvals.md) (مُسلَّمين)، وبيجمع نقاط الربط اللي تركتها الأجزاء 01–07 («بتجي بالجزء 08»).
 > المرجع (للفهم فقط): `ipm-web/src/app/domain/activity/activity.models.ts`، `mock/server/handlers/activity.handlers.ts` (`audit` و`audit/verify` و`notifications`)،
 > `mock/db/database.ts` (`log` و`notify` وسلسلة الـ hash)، وكل `db.notify(...)` ببقية المعالجات، وSRS FR-AUD-01…09 وFR-NOT وFR-COL-07.
@@ -117,4 +117,12 @@
 بث فوري (SignalR)، البريد/الدفع، تفضيلات الإشعار، حذف/أرشفة الإشعارات تلقائياً، لوحة التقارير والبحث الشامل (09)، تشفير/توقيع خارجي للسلسلة (مرساة خارجية للـ hash).
 
 ## 11. تعديلات أثناء التنفيذ
-_(تتعبّى عند التسليم.)_
+1. **السلسلة والمنع داخل قاعدة البيانات مش بالـ interceptor:** trigger `BEFORE INSERT` بياخد قفل `pg_advisory_xact_lock` وبيرقّم الصف ويحسب `prev_hash`/`hash`، وtrigger آخر بيرفض `UPDATE`/`DELETE`/`TRUNCATE`. السبب إن الـ interceptor بيشتغل قبل بدء الـ transaction فما بيقدر يمسك القفل حتى الـ commit. الفحص `verify` استعلام SQL واحد (مش دفعات 5000) وبيكشف كمان أي ثغرة بالترقيم (حذف صف).
+2. **عمود إضافي `work_item_id`** بـ `audit_log` (مش بالجدول بالمواصفة) لنشاط العنصر: التعليقات والروابط وطلبات الموافقة بتنربط بعنصرها من `IAuditSubject`. **أحداث Git ما بتدخل نشاط العنصر** (الحدث الواحد ممكن يربط أكثر من عنصر)؛ بتظهر بنشاط المشروع.
+3. **مفردات الإجراءات** (`AuditVocabulary`) بتشتق مفتاح الإجراء من الجدول ونوع التغيير والعمود المتغيّر (مثلاً `workItem.transition` لتغيّر `statusId`). طلبات الموافقة بتطلع `approval.submitted` و`approval.updated` فقط (أخشن من الـ mock). `changes` فاضية لـ insert وdelete (المفتاح كافٍ). فلتر `action` بيطابق نفس القواعد.
+4. **المصدر والربط:** `source = ui` بترويسة `X-Client: ui`، `webhook` لمسار الـ webhooks، `system` بدون طلب (seed)؛ و`correlationId` من `X-Correlation-Id` (حتى 64 حرف آمن) وإلا `TraceIdentifier`. أحداث الأمان: `seq = 0`، المصدر `api`، وبتندمج بالترتيب الزمني بدمج صفحتين بالذاكرة.
+5. **التصدير أمر (command) مش استعلام** لأنه بيكتب حدث `audit.exported` (سجل الجدول الوهمي `audit.exports`)؛ الاختبار ما يمر على حد 50,000 فعلياً (المنطق بسيط بالعدّ قبل البث).
+6. **الإشعارات:** بتتكتب بمعالج واحد `ActivityNotificationHandler` بنطاق (scope) خاص بعد الـ commit؛ `DomainEventsDispatcher` صار يسجّل فشل أي معالج ولا يفشّل الطلب. ما بتنكتب إشعارات خارج طلب HTTP (seed، مهام خلفية) عبر `IUserContext.InRequest`. الأحداث بتنطلق من الكيانات (`WorkItem` و`Project` و`Comment` و`ApprovalRequest` و`Delegation` و`GitEvent`) بدون تغيير قواعدها.
+7. **رؤية المستلم:** بتتحقق وقت الإنشاء بـ `projects.view` بالمشروع (إلا إزالة العضو: بدون فحص لأنه ما عاد يشوف المشروع). تعديل التعليق بيبلّغ فقط من أُضيف حديثاً.
+8. **الـ migration:** بتضيف الأعمدة، وبتنشئ الدوال، وبتعبّي السلسلة للصفوف القديمة (مرتبة `at, id`، مصدرها `system`)، بعدين الفهرس الفريد والـ triggers. اتجرّبت على قاعدة فيها 107 حدث (`verify` سليم). بالاختبارات `ApiFactory` بينشئ الجدول من النموذج ويثبّت نفس الـ SQL (`AuditChainSql.Install`)، وإعادة تصفير الاختبار بتعطّل trigger الـ TRUNCATE مؤقتاً.
+9. **الـ seed:** 5 إشعارات تجريبية لكل من reem وfahad وkhaled وnoura وabdullah (معرّفات `…-800c-…`) وبس بـ `Seed:Demo`.

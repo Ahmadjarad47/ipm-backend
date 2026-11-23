@@ -77,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IAuditLogReader, AuditLogReader>();
+        services.AddScoped<Ipm.Application.Abstractions.Auditing.IAuditFeed, AuditFeed>();
         services.AddScoped<IWorkItemNumbering, WorkItemNumbering>();
     }
 
@@ -89,6 +90,7 @@ public static class DependencyInjection
         await WorkSeeder.SeedAsync(services, configuration);
         await ApprovalsSeeder.SeedAsync(services, configuration);
         await GitSeeder.SeedAsync(services, configuration);
+        await ActivitySeeder.SeedAsync(services, configuration);
     }
 
     /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>

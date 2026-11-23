@@ -1,4 +1,5 @@
 using Ipm.Application.Abstractions.Data;
+using Ipm.Domain.Activity;
 using Ipm.Domain.Approvals;
 using Ipm.Domain.Common;
 using Ipm.Domain.Config;
@@ -58,6 +59,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<GitEvent> GitEvents => Set<GitEvent>();
 
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
+
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
