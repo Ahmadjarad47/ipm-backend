@@ -45,6 +45,12 @@ internal sealed class ChangeWorkItemTypeCommandHandler(
             return new TypeChangeResponse(null, conflicts);
         }
 
+        var direct = await SensitiveChangeGuard.EnsureAsync(db, guarded.Value.Caller, ApprovalSubjectType.WorkItem, item.Id, ["typeId"], cancellationToken); // 06b R8
+        if (direct.IsFailure)
+        {
+            return direct.Error;
+        }
+
         item.ChangeType(command.TypeId, item.Fields);
         await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, item.Id, ["typeId"], cancellationToken); // R11 of part 06
         await unitOfWork.SaveChangesAsync(cancellationToken);

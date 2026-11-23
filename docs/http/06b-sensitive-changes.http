@@ -1,0 +1,101 @@
+### الجزء 06b: التعديل الحساس (طلب بقيم مقترحة بتنطبّق ذرّياً عند آخر موافقة، ومنع التعديل المباشر للحقول المحمية)
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### مدير النظام معه audit.override فبيعدّل مباشرة. جرّب التعديل المباشر بمستخدم ثاني (reem / Demo12345) لتشوف المنع.
+### قوالب الواجهة الحساسة (مهمة حرجة، مشروع فعّال) بتنزرع بالتطوير فقط.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### مراجع نحتاجها
+# @name templates
+GET {{api}}/approval-templates?active=true
+Authorization: Bearer {{token}}
+
+###
+@projectTemplateId = {{templates.response.body.$.items[?(@.name=='تعديل حساس على مشروع فعّال')].id}}
+@taskTemplateId = {{templates.response.body.$.items[?(@.name=='تعديل حساس على مهمة حرجة')].id}}
+
+###
+# @name projects
+GET {{api}}/projects?q=erp
+Authorization: Bearer {{token}}
+
+###
+@projectId = {{projects.response.body.$.items[0].id}}
+
+### ─── التقديم ─────────────────────────────────
+
+### طلب تعديل حساس على مشروع فعّال: الحقول المقترحة من المحمية بالقالب (name startDate endDate ownerId)
+### القيم نصوص: التواريخ yyyy-MM-dd، المسؤولون معرّفات مفصولة بفواصل، والأولوية low أو medium أو high أو critical
+# @name request
+POST {{api}}/approvals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "{{projectTemplateId}}",
+  "subjectType": "project",
+  "subjectId": "{{projectId}}",
+  "proposedChanges": { "name": "تطوير نظام ERP الداخلي - المرحلة الثانية", "endDate": "2027-06-30" }
+}
+
+###
+@approvalId = {{request.response.body.$.id}}
+
+### الطلب بيعرض القيم المقترحة (proposedChanges) والقيم المجمّدة الحالية (snapshot)، والمشروع نفسه ما تغيّر لسا
+# @name approval
+GET {{api}}/approvals/{{approvalId}}
+Authorization: Bearer {{token}}
+
+###
+@approvalEtag = {{approval.response.headers.ETag}}
+@revision = {{approval.response.body.$.revision}}
+
+### آخر موافقة بتطبّق القيم كلها بنفس معاملة القرار. فشل التطبيق (مشروع مؤرشف، حقل محمي تغيّر، قيمة صارت غير صالحة) بيفشّل القرار والطلب بيضل معلّقاً
+POST {{api}}/approvals/{{approvalId}}/decide
+Authorization: Bearer {{token}}
+If-Match: {{approvalEtag}}
+Content-Type: application/json
+
+{ "decision": "approve", "comment": "معتمد", "revision": {{revision}} }
+
+### ─── المنع المباشر ───────────────────────────
+
+### تعديل مباشر لحقل محمي بقالب حساس فعّال بيحكم المشروع ← 422 Approval.ChangeRequiresApproval (إلا لمن معه audit.override)
+### أرسل نفس القيمة الحالية أو غيّر حقلاً غير محمي (الوصف) فبينقبل
+GET {{api}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### ─── أخطاء مفيدة للتجربة ─────────────────────
+
+### حقل غير محمي أو members/relations ← 422 Approval.FieldsNotProtected
+POST {{api}}/approvals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "templateId": "{{projectTemplateId}}", "subjectType": "project", "subjectId": "{{projectId}}", "proposedChanges": { "members": "x" } }
+
+### تاريخ نهاية قبل البداية ← 400 مع errors["proposedChanges.endDate"]
+POST {{api}}/approvals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "templateId": "{{projectTemplateId}}", "subjectType": "project", "subjectId": "{{projectId}}", "proposedChanges": { "endDate": "2020-01-01" } }
+
+### قيم مطابقة للحالية ← 422 Approval.NoChange
+POST {{api}}/approvals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "templateId": "{{projectTemplateId}}", "subjectType": "project", "subjectId": "{{projectId}}", "proposedChanges": { "endDate": "{{projects.response.body.$.items[0].endDate}}" } }

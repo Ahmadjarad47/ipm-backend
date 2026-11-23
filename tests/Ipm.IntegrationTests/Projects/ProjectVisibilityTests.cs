@@ -98,7 +98,12 @@ public sealed class ProjectVisibilityTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.Forbidden, viewerEdit.StatusCode);
         Assert.Equal("Auth.Forbidden", (await ProblemAsync(viewerEdit)).Code);
 
-        var managerEdit = await PutProjectAsync(khaled, erp, UpdateBody("تطوير نظام ERP الداخلي"), tag);
+        // ERP is active, so its name, dates and owner need an approval (06b); the manager still edits what is not protected.
+        var current = (await GetProjectAsync(khaled, erp)).Body;
+        var managerEdit = await PutProjectAsync(
+            khaled, erp,
+            UpdateBody(current.GetProperty("name").GetString()!, start: current.GetProperty("startDate").GetString()!, end: current.GetProperty("endDate").GetString()!),
+            tag);
         Assert.Equal(HttpStatusCode.OK, managerEdit.StatusCode);
 
         var (otherId, _) = await CreateProjectAsync(admin);

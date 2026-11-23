@@ -18,6 +18,7 @@ public sealed record ApprovalResponse(
     int CurrentStage,
     int Revision,
     IReadOnlyDictionary<string, string?> Snapshot,
+    IReadOnlyDictionary<string, string?> ProposedChanges,
     IReadOnlyList<ApprovalDecision> Decisions,
     IReadOnlyList<ApprovalStage> Stages,
     ApprovalAction? Action,

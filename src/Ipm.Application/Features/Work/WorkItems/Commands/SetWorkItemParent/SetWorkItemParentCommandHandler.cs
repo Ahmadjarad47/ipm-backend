@@ -48,6 +48,13 @@ internal sealed class SetWorkItemParentCommandHandler(
             }
         }
 
+        var direct = await SensitiveChangeGuard.EnsureAsync(
+            db, guarded.Value.Caller, ApprovalSubjectType.WorkItem, item.Id, command.ParentId != item.ParentId ? ["parentId"] : [], cancellationToken); // 06b R8
+        if (direct.IsFailure)
+        {
+            return direct.Error;
+        }
+
         var parentChanged = command.ParentId != item.ParentId;
         item.SetParent(command.ParentId);
         await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, item.Id, parentChanged ? ["parentId"] : [], cancellationToken); // R11 of part 06

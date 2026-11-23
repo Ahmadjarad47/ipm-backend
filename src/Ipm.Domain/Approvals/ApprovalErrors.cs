@@ -21,8 +21,6 @@ public static class ApprovalErrors
     public static readonly Error ActionMismatch = Error.Failure("Approval.ActionMismatch", "الإجراء لا يتوافق مع قالب الموافقة.");
 
     /// <summary>R4: sensitive changes arrive with part 06b.</summary>
-    public static readonly Error SensitiveNotSupported = Error.Failure(
-        "Approval.SensitiveNotSupported", "طلبات التعديل الحساس غير متاحة بعد.");
 
     /// <summary>R4.</summary>
     public static readonly Error ProjectArchived = Error.Failure("Approval.ProjectArchived", "المشروع مؤرشف ولا يقبل طلبات موافقة.");
@@ -83,4 +81,29 @@ public static class ApprovalErrors
 
     /// <summary>R13.</summary>
     public static readonly Error DelegatorInvalid = Error.Failure("Delegation.DelegatorInvalid", "المفوِّض غير موجود أو غير نشط.");
+
+    /// <summary>06b R1: the subject (a work item) is archived.</summary>
+    public static readonly Error SubjectArchived = Error.Failure("Approval.SubjectArchived", "عنصر العمل مؤرشف ولا يقبل طلبات تعديل.");
+
+    /// <summary>06b R1: a sensitive change names no values.</summary>
+    public static readonly Error ProposedChangesRequired = Error.Failure("Approval.ProposedChangesRequired", "حدّد القيم المقترحة للحقول المحمية.");
+
+    /// <summary>06b R1: only a sensitive-change template takes proposed values.</summary>
+    public static readonly Error ProposedChangesNotAllowed = Error.Failure(
+        "Approval.ProposedChangesNotAllowed", "القيم المقترحة متاحة لقوالب التعديل الحساس فقط.");
+
+    /// <summary>06b R2.</summary>
+    public static Error FieldsNotProtected(IEnumerable<string> fields) => Error.Failure(
+        "Approval.FieldsNotProtected", $"حقول غير محمية بهذا القالب أو غير قابلة للاقتراح: {string.Join("، ", fields)}.");
+
+    /// <summary>06b R5.</summary>
+    public static readonly Error NoChange = Error.Failure("Approval.NoChange", "القيم المقترحة مطابقة للحالية؛ لا يوجد تعديل لطلبه.");
+
+    /// <summary>06b R6: the protected values moved after the request was submitted, so what the approvers saw is stale.</summary>
+    public static readonly Error ProtectedFieldsDrifted = Error.Conflict(
+        "Approval.ProtectedFieldsChanged", "تغيّرت بيانات محمية بعد تقديم الطلب؛ أعد تقديمه ليُراجَع من جديد.");
+
+    /// <summary>06b R8: the field is protected by an active sensitive-change template that governs the subject.</summary>
+    public static Error ChangeRequiresApproval(string template, IEnumerable<string> fields) => Error.Failure(
+        "Approval.ChangeRequiresApproval", $"تعديل {string.Join("، ", fields)} يتطلب طلب موافقة «{template}» ولا يُنفَّذ مباشرة.");
 }

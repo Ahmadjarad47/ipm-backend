@@ -53,6 +53,26 @@ internal sealed class ResubmitApprovalCommandHandler(
             return ApprovalErrors.SubjectNotFound;
         }
 
+        // 06b R10: a sensitive change is checked again on the live data, so a request that became impossible does not reopen.
+        if (guarded.Value.Template?.Event == ApprovalEvent.SensitiveChange)
+        {
+            var (problems, _) = await SensitiveChanges.ValidateAsync(db, subject, request.ProposedChanges, cancellationToken);
+            if (problems.Count > 0)
+            {
+                throw new Ipm.Application.Common.Exceptions.ValidationException(problems.GroupBy(p => p.Path, p => p.Message).ToDictionary(g => g.Key, g => g.Distinct().ToArray()));
+            }
+
+            if (SensitiveChanges.MissingPermission(caller, project.Id, request.SubjectType, request.ProposedChanges.Select(p => p.Field)) is not null)
+            {
+                return AuthErrors.Forbidden;
+            }
+
+            if (await SensitiveChanges.IsNoChangeAsync(db, subject, request.ProposedChanges, cancellationToken))
+            {
+                return ApprovalErrors.NoChange;
+            }
+        }
+
         var (resolved, unresolved) = await ApproverResolver.FreezeAsync(db, request.Stages, project, request.RequesterId, cancellationToken);
         if (unresolved is not null)
         {

@@ -100,6 +100,12 @@ internal sealed class UpdateWorkItemCommandHandler(
         if (command.DueDate != item.DueDate) { changedFields.Add("dueDate"); }
         if (assigneesChanged) { changedFields.Add("assigneeIds"); }
 
+        var direct = await SensitiveChangeGuard.EnsureAsync(db, caller, ApprovalSubjectType.WorkItem, item.Id, changedFields, cancellationToken); // 06b R8
+        if (direct.IsFailure)
+        {
+            return direct.Error;
+        }
+
         var updated = item.Update(command.Title, command.Description, command.Priority, command.StartDate, command.DueDate, command.AssigneeIds, fields);
         if (updated.IsFailure)
         {

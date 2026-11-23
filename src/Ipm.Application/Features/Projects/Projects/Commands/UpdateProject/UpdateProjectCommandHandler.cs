@@ -75,6 +75,12 @@ internal sealed class UpdateProjectCommandHandler(
         if (project.StartDate != before.StartDate) { changedFields.Add("startDate"); }
         if (project.EndDate != before.EndDate) { changedFields.Add("endDate"); }
         if (project.OwnerId != before.OwnerId) { changedFields.Add("ownerId"); }
+        var direct = await SensitiveChangeGuard.EnsureAsync(db, guarded.Value.Caller, ApprovalSubjectType.Project, project.Id, changedFields, cancellationToken); // 06b R8
+        if (direct.IsFailure)
+        {
+            return direct.Error;
+        }
+
         await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.Project, project.Id, changedFields, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

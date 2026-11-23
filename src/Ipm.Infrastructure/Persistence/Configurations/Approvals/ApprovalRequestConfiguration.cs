@@ -30,6 +30,7 @@ internal sealed class ApprovalRequestConfiguration : IEntityTypeConfiguration<Ap
         builder.Property(r => r.Decisions).HasJsonbList();
         builder.Property(r => r.Stages).HasJsonbList();
         builder.Property(r => r.ResolvedApprovers).HasJsonbList();
+        builder.Property(r => r.ProposedChanges).HasJsonbList();
 
         builder.HasIndex(r => new { r.SubjectType, r.SubjectId, r.Status });
         builder.HasIndex(r => new { r.ProjectId, r.Status });

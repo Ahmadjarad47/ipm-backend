@@ -36,7 +36,7 @@ internal sealed class BulkDecideApprovalsCommandHandler(
                 continue;
             }
 
-            var decided = await ApprovalDecisions.DecideAsync(guarded.Value, DecisionKind.Approve, command.Comment, revision, securityLog, time, cancellationToken);
+            var decided = await ApprovalDecisions.DecideAsync(guarded.Value, DecisionKind.Approve, command.Comment, revision, db, access, securityLog, time, cancellationToken);
             if (decided.IsFailure)
             {
                 results.Add(new BulkDecideResult(id, false, decided.Error.Description));

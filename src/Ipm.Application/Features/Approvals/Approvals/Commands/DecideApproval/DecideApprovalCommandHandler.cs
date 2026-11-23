@@ -23,7 +23,7 @@ internal sealed class DecideApprovalCommandHandler(
             return Error.StaleVersion;
         }
 
-        var decided = await ApprovalDecisions.DecideAsync(guarded.Value, command.Decision, command.Comment, command.Revision, securityLog, time, cancellationToken);
+        var decided = await ApprovalDecisions.DecideAsync(guarded.Value, command.Decision, command.Comment, command.Revision, db, access, securityLog, time, cancellationToken);
         if (decided.IsFailure)
         {
             return decided.Error;
