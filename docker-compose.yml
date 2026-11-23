@@ -48,6 +48,8 @@ services:
       Serilog__WriteTo__1__Args__serverUrl: http://seq
       Database__MigrateOnStartup: "true"
       OpenApi__Enabled: "true"
+      # Real data only: no demo users, projects or notifications (set to "true" for a demo database).
+      Seed__Demo: "false"
     ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }
