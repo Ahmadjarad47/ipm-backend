@@ -39,3 +39,4 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 07 ربط Git | مُسلَّم | [07-git-integration](docs/modules/07-git-integration.md) |
 | 08 النشاط والتدقيق والإشعارات | مُسلَّم | [08-activity-audit-notifications](docs/modules/08-activity-audit-notifications.md) |
 | 09 اللوحة والبحث والإعدادات | مُسلَّم | [09-dashboard-search-settings](docs/modules/09-dashboard-search-settings.md) |
+| 10 المرفقات | خارج الإصدار الأول (قرار المالك) | الصلاحيات `files.*` وإعدادات المرفقات (`attachmentMaxMb`، `attachmentExtensions`) موجودة وتُخزَّن فقط؛ لا رفع ولا تنزيل |
