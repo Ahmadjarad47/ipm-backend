@@ -100,6 +100,21 @@ if (behindProxy)
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
+// The API answers are per user and change with every write: a browser or proxy must never keep one.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            return Task.CompletedTask;
+        });
+    }
+
+    await next();
+});
+
 app.UseAuthentication();
 app.UseMiddleware<MustChangePasswordMiddleware>();
 app.UseAuthorization();

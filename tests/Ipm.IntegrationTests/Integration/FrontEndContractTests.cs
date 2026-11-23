@@ -76,6 +76,16 @@ public sealed class FrontEndContractTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Answers_of_the_API_are_never_cached()
+    {
+        using var admin = await factory.AdminClientAsync();
+
+        var response = await admin.GetAsync(new Uri("/api/v1/projects", UriKind.Relative));
+
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
     public async Task An_approval_request_says_when_it_was_made()
     {
         using var admin = await factory.AdminClientAsync();
