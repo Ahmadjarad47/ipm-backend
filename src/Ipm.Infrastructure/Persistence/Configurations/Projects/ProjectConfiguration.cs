@@ -23,6 +23,7 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.Name).HasMaxLength(Project.NameMaxLength);
         builder.Property(p => p.Description).HasMaxLength(4000);
         builder.Property(p => p.WorkflowOverrides).HasJsonbList();
+        builder.Property(p => p.RefPattern).HasMaxLength(Ipm.Domain.Git.GitRefPatterns.MaxLength);
 
         // R1: codes are stored in upper case, so a plain unique index is case-insensitive.
         builder.HasIndex(p => p.Code).IsUnique();

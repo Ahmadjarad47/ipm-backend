@@ -21,4 +21,5 @@ public sealed record ProjectResponse(
     uint Version,
     ProjectProgress? Progress = null,
     int WorkItemCount = 0,
-    int OverdueCount = 0);
+    int OverdueCount = 0,
+    string? RefPattern = null);

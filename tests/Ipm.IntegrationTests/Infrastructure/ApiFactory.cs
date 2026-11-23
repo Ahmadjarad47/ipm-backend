@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 
@@ -32,6 +33,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .Build();
 
     private readonly RedisContainer _redis = new RedisBuilder("redis:7").Build();
+
+    /// <summary>The fake Git server every sync talks to.</summary>
+    public FakeGitRemote GitRemote { get; } = new();
 
     public string DatabaseConnectionString => _postgres.GetConnectionString();
 
@@ -97,12 +101,16 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Seed:DemoPassword", DemoPassword);
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-0123456789-abcdef");
         builder.UseSetting("RateLimiting:AuthPerMinute", "1000");
+        builder.UseSetting("Git:SecretKey", "dGVzdHMtZ2l0LXNlY3JldC1rZXktMDEyMzQ1Njc4OWE=");
 
         builder.ConfigureServices(services =>
         {
             services.ConfigureDbContext<ApplicationDbContext>(options =>
                 options.ReplaceService<IModelCustomizer, ProbeModelCustomizer>());
             services.AddTransient<IEndpoint, ProbeEndpoints>();
+            services.RemoveAll<Ipm.Application.Abstractions.Git.IGitRemote>();
+            services.AddSingleton(GitRemote);
+            services.AddSingleton<Ipm.Application.Abstractions.Git.IGitRemote>(GitRemote);
         });
     }
 }

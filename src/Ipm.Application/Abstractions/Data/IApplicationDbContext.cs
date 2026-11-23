@@ -1,5 +1,6 @@
 using Ipm.Domain.Approvals;
 using Ipm.Domain.Config;
+using Ipm.Domain.Git;
 using Ipm.Domain.Identity;
 using Ipm.Domain.Projects;
 using Ipm.Domain.Work;
@@ -53,4 +54,11 @@ public interface IApplicationDbContext
     DbSet<ApprovalRequest> ApprovalRequests { get; }
 
     DbSet<Delegation> Delegations { get; }
+
+    // Part 07: Git integration.
+    DbSet<GitRepository> GitRepositories { get; }
+
+    DbSet<GitEvent> GitEvents { get; }
+
+    DbSet<WebhookDelivery> WebhookDeliveries { get; }
 }

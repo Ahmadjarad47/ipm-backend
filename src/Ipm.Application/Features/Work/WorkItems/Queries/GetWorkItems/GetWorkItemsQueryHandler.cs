@@ -39,7 +39,10 @@ internal sealed class GetWorkItemsQueryHandler(IApplicationDbContext db, IUserCo
 
         var total = await items.CountAsync(cancellationToken);
         var rows = await Sort(items, query).Skip(query.Page.Skip).Take(query.Page.Take).ToListAsync(cancellationToken);
-        return new PagedList<WorkItemResponse>([.. rows.Select(i => i.ToResponse())], Math.Max(query.Page.Page, 1), query.Page.Take, total);
+        // Part 07 R13: the development indicator, only for the projects where the caller may see Git.
+        var withGit = rows.Where(i => caller.Value.Can(Permissions.GitView, i.ProjectId)).ToList();
+        var dev = await DevIndicators.LoadAsync(db, withGit, cancellationToken);
+        return new PagedList<WorkItemResponse>([.. rows.Select(i => dev.TryGetValue(i.Id, out var d) ? i.ToResponse() with { Dev = d } : i.ToResponse())], Math.Max(query.Page.Page, 1), query.Page.Take, total);
     }
 
     private IQueryable<WorkItem> Filter(IQueryable<WorkItem> items, GetWorkItemsQuery query, DateOnly today)

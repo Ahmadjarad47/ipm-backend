@@ -21,4 +21,5 @@ public sealed record WorkItemResponse(
     bool Archived,
     Guid? CreatedBy,
     DateTimeOffset CreatedAt,
-    uint Version);
+    uint Version,
+    DevIndicator? Dev = null);

@@ -2,6 +2,10 @@ using Ipm.Application.Abstractions.Auditing;
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Caching;
 using Ipm.Application.Abstractions.Data;
+using Ipm.Application.Abstractions.Git;
+using Ipm.Application.Abstractions.Security;
+using Ipm.Infrastructure.Git;
+using Ipm.Infrastructure.Security;
 using Ipm.Infrastructure.Authentication;
 using Ipm.Infrastructure.Caching;
 using Ipm.Infrastructure.Events;
@@ -30,6 +34,11 @@ public static class DependencyInjection
 
         AddPersistence(services, database);
         services.AddIdentityAuthentication(configuration);
+
+        services.AddOptions<GitOptions>().Bind(configuration.GetSection(GitOptions.Section)).ValidateDataAnnotations().ValidateOnStart();
+        services.AddSingleton<ISecretProtector, AesGcmSecretProtector>();
+        services.AddHttpClient<IGitRemote, GitRemote>((sp, client) =>
+            client.Timeout = TimeSpan.FromSeconds(sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<GitOptions>>().Value.RemoteTimeoutSeconds));
 
         services.AddStackExchangeRedisCache(options =>
         {
@@ -79,6 +88,7 @@ public static class DependencyInjection
         await ProjectsSeeder.SeedAsync(services, configuration);
         await WorkSeeder.SeedAsync(services, configuration);
         await ApprovalsSeeder.SeedAsync(services, configuration);
+        await GitSeeder.SeedAsync(services, configuration);
     }
 
     /// <summary>Applies pending EF Core migrations. Used at startup in development and docker-compose.</summary>

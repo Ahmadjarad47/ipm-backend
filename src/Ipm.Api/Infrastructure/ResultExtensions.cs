@@ -28,6 +28,7 @@ public static class ResultExtensions
             ErrorType.PreconditionFailed => StatusCodes.Status412PreconditionFailed,
             ErrorType.Unauthorized => StatusCodes.Status401Unauthorized,
             ErrorType.TooManyRequests => StatusCodes.Status429TooManyRequests,
+            ErrorType.BadGateway => StatusCodes.Status502BadGateway,
             _ => StatusCodes.Status422UnprocessableEntity,
         };
 

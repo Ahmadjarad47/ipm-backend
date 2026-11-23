@@ -18,5 +18,6 @@ internal static class ProjectMapping
         project.AllowedTypeIds,
         project.DefaultTypeId,
         project.WorkflowOverrides.ToDictionary(o => o.TypeId, o => o.WorkflowId),
-        project.Version);
+        project.Version,
+        RefPattern: project.RefPattern);
 }

@@ -44,6 +44,9 @@ public sealed partial class Project : AuditableEntity
     /// <summary>Counts member changes, so the project version (ETag) moves even though the members live in their own table.</summary>
     public int MembersRevision { get; private set; }
 
+    /// <summary>Part 07 R4: the pattern that finds work item refs in Git texts. Null means the default one built from the project code.</summary>
+    public string? RefPattern { get; private set; }
+
     public IReadOnlyCollection<ProjectMember> Members => _members;
 
     /// <summary>Codes are compared and stored in upper case, so <c>erp</c> and <c>ERP</c> are the same code.</summary>
@@ -123,6 +126,9 @@ public sealed partial class Project : AuditableEntity
         OwnerId = newOwnerId;
         return Result.Success();
     }
+
+    /// <summary>Part 07 R4: the handler checked the pattern. A blank pattern restores the default.</summary>
+    public void SetRefPattern(string? pattern) => RefPattern = string.IsNullOrWhiteSpace(pattern) ? null : pattern.Trim();
 
     public void Archive() => IsArchived = true;
 
