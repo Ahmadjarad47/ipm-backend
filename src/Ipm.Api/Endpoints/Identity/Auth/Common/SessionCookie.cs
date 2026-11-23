@@ -13,6 +13,9 @@ internal static class SessionCookie
     /// <summary>Rate limiting policy of sign-in and refresh (R1, spec 01 §5).</summary>
     public const string RateLimitPolicy = "auth";
 
+    /// <summary>Refresh only trades a random 64-byte token, so it is not guessable; it gets a roomier limit, because every page load of a returning user asks for it.</summary>
+    public const string RefreshRateLimitPolicy = "refresh";
+
     public const string Name = "ipm_refresh";
     private const string Path = "/api/v1/auth";
 

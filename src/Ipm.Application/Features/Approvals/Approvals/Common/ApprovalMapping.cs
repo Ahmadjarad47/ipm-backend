@@ -26,5 +26,6 @@ internal static class ApprovalMapping
         request.ConsumedAt,
         request.IsOverdue(now),
         canDecide,
+        request.CreatedAt,
         request.Version);
 }

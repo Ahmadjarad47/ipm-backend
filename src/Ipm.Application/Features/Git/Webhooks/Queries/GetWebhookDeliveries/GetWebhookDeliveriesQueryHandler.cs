@@ -28,6 +28,16 @@ internal sealed class GetWebhookDeliveriesQueryHandler(IApplicationDbContext db,
         }
 
         var deliveries = db.WebhookDeliveries.AsNoTracking().Where(d => d.ProjectId == projectId);
+        if (query.Outcome is { Length: > 0 } outcome && Enum.TryParse<DeliveryOutcome>(outcome, ignoreCase: true, out var wanted))
+        {
+            deliveries = deliveries.Where(d => d.Outcome == wanted);
+        }
+
+        if (query.Event is { Length: > 0 } eventName)
+        {
+            deliveries = deliveries.Where(d => d.Event == eventName);
+        }
+
         var total = await deliveries.CountAsync(cancellationToken);
         var rows = await deliveries.OrderByDescending(d => d.CreatedAt).ThenByDescending(d => d.Id).Skip(query.Page.Skip).Take(query.Page.Take).ToListAsync(cancellationToken);
         return new PagedList<DeliveryResponse>([.. rows.Select(d => d.ToResponse())], Math.Max(query.Page.Page, 1), query.Page.Take, total);
