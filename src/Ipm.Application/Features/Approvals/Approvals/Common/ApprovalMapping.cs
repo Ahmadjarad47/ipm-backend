@@ -16,6 +16,7 @@ internal static class ApprovalMapping
         request.CurrentStage,
         request.Revision,
         request.Snapshot.ToDictionary(s => s.Field, s => s.Value),
+        request.ProposedChanges.ToDictionary(s => s.Field, s => s.Value),
         request.Decisions,
         request.Stages,
         request.Action,

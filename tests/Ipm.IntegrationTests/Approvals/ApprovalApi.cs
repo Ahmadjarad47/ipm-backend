@@ -38,6 +38,15 @@ internal static class ApprovalApi
         return (body.GetProperty("id").GetGuid(), response.Headers.ETag!, body);
     }
 
+    /// <summary>A sensitive-change template for one project (two stages the project manager decides), protecting the given fields.</summary>
+    public static async Task<Guid> SensitiveTemplateAsync(HttpClient admin, Guid project, string[] protectedFields, int priority = 30) =>
+        await CreateTemplateAsync(
+            admin, "sensitive-change", ManagerStages(await MyIdAsync(admin)), protectedFields,
+            new { projectIds = new[] { project }, actions = new[] { "change" }, priority });
+
+    public static Task<HttpResponseMessage> SubmitChangeAsync(HttpClient client, Guid templateId, string subjectType, Guid subjectId, object proposedChanges) =>
+        client.PostAsJsonAsync(new Uri("/api/v1/approvals", UriKind.Relative), new { templateId, subjectType, subjectId, proposedChanges });
+
     public static Task<HttpResponseMessage> TrySubmitAsync(HttpClient client, Guid templateId, string subjectType, Guid subjectId, string? action = null) =>
         client.PostAsJsonAsync(new Uri("/api/v1/approvals", UriKind.Relative), new { templateId, subjectType, subjectId, action });
 

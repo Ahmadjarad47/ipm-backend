@@ -8,7 +8,7 @@ internal sealed class SubmitApprovalEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app) =>
         app.MapPost("approvals", async (SubmitApprovalRequest r, ISender sender, HttpResponse response, CancellationToken ct) =>
-                (await sender.Send(new SubmitApprovalCommand(r.TemplateId, r.SubjectType, r.SubjectId, r.Action, r.TargetStatusId), ct))
+                (await sender.Send(new SubmitApprovalCommand(r.TemplateId, r.SubjectType, r.SubjectId, r.Action, r.TargetStatusId, r.ProposedChanges), ct))
                     .ToCreatedETagResult(response, a => a.Version, a => $"/api/v1/approvals/{a.Id}"))
             .WithTags(ApprovalsTags.Requests)
             .WithSummary("تقديم طلب موافقة")

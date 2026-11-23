@@ -81,6 +81,23 @@ internal sealed class BulkUpdateWorkItemsCommandHandler(
             return WorkItemErrors.ProjectArchived;
         }
 
+        // 06b R8: a value that really changes may not be one an active sensitive-change template protects for this item.
+        var changed = action.Kind switch
+        {
+            "assign" when !(action.AssigneeIds ?? []).Order().SequenceEqual(item.AssigneeIds.Order()) => "assigneeIds",
+            "priority" when action.Priority != item.Priority => "priority",
+            "dueDate" when action.DueDate != item.DueDate => "dueDate",
+            _ => null,
+        };
+        if (changed is not null)
+        {
+            var direct = await SensitiveChangeGuard.EnsureAsync(db, caller, ApprovalSubjectType.WorkItem, item.Id, [changed], cancellationToken);
+            if (direct.IsFailure)
+            {
+                return direct;
+            }
+        }
+
         switch (action.Kind)
         {
             case "assign":

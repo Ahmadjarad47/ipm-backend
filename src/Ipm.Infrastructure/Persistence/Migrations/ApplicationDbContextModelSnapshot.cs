@@ -63,6 +63,11 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("project_id");
 
+                    b.Property<string>("ProposedChanges")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("proposed_changes");
+
                     b.Property<Guid>("RequesterId")
                         .HasColumnType("uuid")
                         .HasColumnName("requester_id");

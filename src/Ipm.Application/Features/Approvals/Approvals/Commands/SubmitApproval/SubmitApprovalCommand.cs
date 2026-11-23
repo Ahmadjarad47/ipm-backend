@@ -8,5 +8,6 @@ namespace Ipm.Application.Features.Approvals.Approvals.Commands.SubmitApproval;
 /// Asks for the approval of an action on a project or a work item with a template (R4). The action (close, reopen, activate) is inferred
 /// when omitted. <paramref name="TargetStatusId"/> binds the approval to one target status.
 /// </summary>
-public sealed record SubmitApprovalCommand(Guid TemplateId, ApprovalSubjectType SubjectType, Guid SubjectId, ApprovalAction? Action, Guid? TargetStatusId)
+public sealed record SubmitApprovalCommand(
+    Guid TemplateId, ApprovalSubjectType SubjectType, Guid SubjectId, ApprovalAction? Action, Guid? TargetStatusId, IReadOnlyDictionary<string, string?>? ProposedChanges = null)
     : ICommand<ApprovalResponse>;

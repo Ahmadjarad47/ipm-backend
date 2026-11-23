@@ -8,7 +8,7 @@ namespace Ipm.Application.Features.Approvals.Approvals.Common;
 internal static class ApprovalSupersession
 {
     public static async Task SupersedeAsync(
-        IApplicationDbContext db, ApprovalSubjectType type, Guid subjectId, IReadOnlyCollection<string> changedFields, CancellationToken cancellationToken)
+        IApplicationDbContext db, ApprovalSubjectType type, Guid subjectId, IReadOnlyCollection<string> changedFields, CancellationToken cancellationToken, Guid? except = null)
     {
         if (changedFields.Count == 0)
         {
@@ -16,7 +16,7 @@ internal static class ApprovalSupersession
         }
 
         var pending = await db.ApprovalRequests
-            .Where(r => r.SubjectType == type && r.SubjectId == subjectId && r.Status == ApprovalStatus.PendingApproval)
+            .Where(r => r.SubjectType == type && r.SubjectId == subjectId && r.Status == ApprovalStatus.PendingApproval && r.Id != except)
             .ToListAsync(cancellationToken);
         if (pending.Count == 0)
         {

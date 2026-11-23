@@ -43,6 +43,9 @@ public sealed class ApprovalRequest : AuditableEntity
 
     public List<ResolvedApprovers> ResolvedApprovers { get; private set; } = [];
 
+    /// <summary>Sensitive changes only (06b): the values that are applied to the subject when the last stage approves. Empty otherwise.</summary>
+    public List<SnapshotEntry> ProposedChanges { get; private set; } = [];
+
     public ApprovalAction? Action { get; private set; }
 
     public Guid? TargetStatusId { get; private set; }
@@ -56,7 +59,7 @@ public sealed class ApprovalRequest : AuditableEntity
     /// <summary>R4: starts pending on stage 1. The handler checked the template, the subject and that every stage has an approver.</summary>
     public static ApprovalRequest Create(
         ApprovalTemplate template, ApprovalSubjectType subjectType, Guid subjectId, Guid projectId, string title, Guid requesterId,
-        ApprovalAction? action, Guid? targetStatusId, IEnumerable<SnapshotEntry> snapshot, IEnumerable<ResolvedApprovers> resolved, DateTimeOffset now, Guid? id = null)
+        ApprovalAction? action, Guid? targetStatusId, IEnumerable<SnapshotEntry> snapshot, IEnumerable<ResolvedApprovers> resolved, DateTimeOffset now, Guid? id = null, IEnumerable<SnapshotEntry>? proposedChanges = null)
     {
         var request = id is { } fixedId ? new ApprovalRequest(fixedId) : new ApprovalRequest();
 
@@ -69,6 +72,7 @@ public sealed class ApprovalRequest : AuditableEntity
         request.Stages = [.. template.Stages];
         request.Action = action;
         request.TargetStatusId = targetStatusId;
+        request.ProposedChanges = [.. proposedChanges ?? []];
         request.Start(snapshot, resolved, now, revision: 1);
         return request;
     }
@@ -179,6 +183,9 @@ public sealed class ApprovalRequest : AuditableEntity
         StageDueAt = null;
         return true;
     }
+
+    /// <summary>06b R6: after the proposed values were applied, the frozen copy shows the new values.</summary>
+    public void RefreshSnapshot(IEnumerable<SnapshotEntry> snapshot) => Snapshot = [.. snapshot];
 
     /// <summary>R9: the approval is spent by its one action.</summary>
     public void Consume(DateTimeOffset now) => ConsumedAt = now;
