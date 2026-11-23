@@ -1,0 +1,45 @@
+### الجزء 09: الإعدادات العامة واللوحة والبحث
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### إعدادات المؤسسة (لأي مستخدم). الـ ETag هو الإصدار للتعديل
+# @name settings
+GET {{api}}/settings
+Authorization: Bearer {{token}}
+
+### تعديل جزئي (settings.manage + If-Match): بس المفاتيح المرسلة
+PATCH {{api}}/settings
+Authorization: Bearer {{token}}
+If-Match: {{settings.response.headers.ETag}}
+Content-Type: application/json
+
+{ "commentEditHours": 12, "allowCrossProjectRelations": true, "timeZone": "Asia/Riyadh" }
+
+### مؤشرات اللوحة. from وto يوم بتوقيت المؤسسة، وstatusCategory قائمة بفواصل
+GET {{api}}/dashboard/stats
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/dashboard/stats?projectId=01970000-0000-7000-8007-000000000001&statusCategory=active,blocked&from=2026-01-01&to=2026-12-31
+Authorization: Bearer {{token}}
+
+### البحث الشامل: الرمز الدقيق أولاً (حرفين على الأقل، limit حتى 30)
+GET {{api}}/search?q=ERP-104&limit=10
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/search?q=تقارير
+Authorization: Bearer {{token}}

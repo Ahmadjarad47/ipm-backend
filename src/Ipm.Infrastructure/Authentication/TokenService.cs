@@ -46,7 +46,9 @@ internal sealed class TokenService(ApplicationDbContext db, IOptions<JwtOptions>
             ]),
         });
 
-        var (refreshToken, entity) = NewRefreshToken(user.Id, now);
+        // Spec 09 R5-a: the session length comes from the organization settings (new sessions only; the default is 8 hours).
+        var sessionHours = await db.Settings.AsNoTracking().Select(s => s.SessionHours).SingleOrDefaultAsync(cancellationToken);
+        var (refreshToken, entity) = NewRefreshToken(user.Id, now, sessionHours > 0 ? sessionHours : Ipm.Domain.Config.SettingsValues.Defaults.SessionHours);
         db.RefreshTokens.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
 
@@ -100,7 +102,7 @@ internal sealed class TokenService(ApplicationDbContext db, IOptions<JwtOptions>
 
     internal static SymmetricSecurityKey SigningKey(JwtOptions options) => new(Encoding.UTF8.GetBytes(options.SigningKey));
 
-    private (string Token, RefreshToken Entity) NewRefreshToken(Guid userId, DateTimeOffset now)
+    private static (string Token, RefreshToken Entity) NewRefreshToken(Guid userId, DateTimeOffset now, int sessionHours)
     {
         var token = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(64));
         return (token, new RefreshToken
@@ -108,7 +110,7 @@ internal sealed class TokenService(ApplicationDbContext db, IOptions<JwtOptions>
             UserId = userId,
             TokenHash = Hash(token),
             CreatedAt = now,
-            ExpiresAt = now.AddDays(_options.RefreshTokenDays),
+            ExpiresAt = now.AddHours(sessionHours),
         });
     }
 

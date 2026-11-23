@@ -38,4 +38,4 @@ dotnet test Ipm.slnx             # اختبارات التكامل تحتاج Do
 | 06b التعديل الحساس | مُسلَّم | [06b-sensitive-changes](docs/modules/06b-sensitive-changes.md) |
 | 07 ربط Git | مُسلَّم | [07-git-integration](docs/modules/07-git-integration.md) |
 | 08 النشاط والتدقيق والإشعارات | مُسلَّم | [08-activity-audit-notifications](docs/modules/08-activity-audit-notifications.md) |
-| 09 اللوحة والبحث والإعدادات | مسودة تنتظر الموافقة | [09-dashboard-search-settings](docs/modules/09-dashboard-search-settings.md) |
+| 09 اللوحة والبحث والإعدادات | مُسلَّم | [09-dashboard-search-settings](docs/modules/09-dashboard-search-settings.md) |

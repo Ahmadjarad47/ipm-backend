@@ -553,6 +553,84 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ipm.Domain.Config.SystemSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllowCrossProjectRelations")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_cross_project_relations");
+
+                    b.Property<bool>("AllowSelfApproval")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_self_approval");
+
+                    b.PrimitiveCollection<List<string>>("AttachmentExtensions")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("attachment_extensions");
+
+                    b.Property<int>("AttachmentMaxMb")
+                        .HasColumnType("integer")
+                        .HasColumnName("attachment_max_mb");
+
+                    b.Property<int>("AuditRetentionDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("audit_retention_days");
+
+                    b.Property<int>("CommentEditHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("comment_edit_hours");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.PrimitiveCollection<List<Guid>>("ProgressIncludedTypeIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("progress_included_type_ids");
+
+                    b.Property<bool>("ProjectsPrivateByDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("projects_private_by_default");
+
+                    b.Property<int>("SessionHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("session_hours");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_system_settings");
+
+                    b.ToTable("system_settings", "config");
+                });
+
             modelBuilder.Entity("Ipm.Domain.Config.WorkItemType", b =>
                 {
                     b.Property<Guid>("Id")

@@ -27,7 +27,7 @@ internal static class ApprovalDecisions
             return decidable;
         }
 
-        if (request.RequesterId == caller.UserId && !ApprovalDeciders.SelfDecisionAllowed(template))
+        if (request.RequesterId == caller.UserId && !guarded.Deciders.SelfDecisionAllowed(template))
         {
             return ApprovalErrors.SelfDecision;
         }
