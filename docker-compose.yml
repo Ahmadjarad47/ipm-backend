@@ -57,6 +57,15 @@ services:
       seq: { condition: service_started }
     restart: unless-stopped
 
+  web:
+    build: ../ipm-web
+    image: ipm-web:dev
+    container_name: ipm-web
+    environment:
+      API_UPSTREAM: http://api:8080
+    ports: ["8000:80"]
+    depends_on: [api]
+
 volumes:
   pgdata:
   redisdata:
