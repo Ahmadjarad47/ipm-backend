@@ -77,6 +77,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IAuditLogReader, AuditLogReader>();
+        services.AddScoped<Ipm.Application.Abstractions.Settings.IOrganizationSettings, OrganizationSettings>();
+        services.AddHostedService<SettingsRefresher>();
         services.AddScoped<Ipm.Application.Abstractions.Auditing.IAuditFeed, AuditFeed>();
         services.AddScoped<IWorkItemNumbering, WorkItemNumbering>();
     }
@@ -85,6 +87,7 @@ public static class DependencyInjection
     public static async Task SeedDatabaseAsync(this IServiceProvider services, IConfiguration configuration)
     {
         await IdentitySeeder.SeedAsync(services, configuration);
+        await SettingsSeeder.SeedAsync(services);
         await ConfigSeeder.SeedAsync(services, configuration);
         await ProjectsSeeder.SeedAsync(services, configuration);
         await WorkSeeder.SeedAsync(services, configuration);

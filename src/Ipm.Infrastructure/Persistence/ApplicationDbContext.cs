@@ -28,6 +28,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<RelationType> RelationTypes => Set<RelationType>();
 
+    public DbSet<SystemSettings> Settings => Set<SystemSettings>();
+
     public DbSet<Status> Statuses => Set<Status>();
 
     public DbSet<Workflow> Workflows => Set<Workflow>();

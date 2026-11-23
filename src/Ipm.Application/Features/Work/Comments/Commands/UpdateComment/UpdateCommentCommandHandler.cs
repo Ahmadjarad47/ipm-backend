@@ -1,5 +1,6 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
+using Ipm.Application.Common;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Work.Comments.Common;
 using Ipm.Domain.Common;
@@ -40,7 +41,7 @@ internal sealed class UpdateCommentCommandHandler(
         }
 
         var mentions = await CommentSubjects.MentionsAsync(db, project, command.Body, cancellationToken);
-        var edited = comment.Edit(caller.UserId, command.Body, mentions, time.GetUtcNow(), CommentPolicy.EditWindowHours);
+        var edited = comment.Edit(caller.UserId, command.Body, mentions, time.GetUtcNow(), (await db.CurrentSettingsAsync(cancellationToken)).CommentEditHours);
         if (edited.IsFailure)
         {
             return edited.Error;

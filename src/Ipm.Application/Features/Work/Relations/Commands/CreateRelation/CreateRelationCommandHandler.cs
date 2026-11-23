@@ -1,5 +1,6 @@
 using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Data;
+using Ipm.Application.Common;
 using Ipm.Application.Abstractions.Messaging;
 using Ipm.Application.Features.Approvals.Approvals.Common;
 using Ipm.Application.Features.Work.Relations.Common;
@@ -55,9 +56,9 @@ internal sealed class CreateRelationCommandHandler(
             return RelationErrors.ItemArchived; // R1
         }
 
-        if (source.ProjectId != target.ProjectId)
+        if (source.ProjectId != target.ProjectId && !(await db.CurrentSettingsAsync(cancellationToken)).AllowCrossProjectRelations)
         {
-            return RelationErrors.CrossProjectNotAllowed; // R2: until the organization setting exists (part 09)
+            return RelationErrors.CrossProjectNotAllowed; // R2: unless the organization allows links between projects (spec 09 R5-c)
         }
 
         if (sourceProject.IsArchived || targetProject.IsArchived)

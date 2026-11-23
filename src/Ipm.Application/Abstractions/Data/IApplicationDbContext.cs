@@ -25,6 +25,8 @@ public interface IApplicationDbContext
 
     DbSet<RelationType> RelationTypes { get; }
 
+    DbSet<SystemSettings> Settings { get; }
+
     // Part 03: statuses and workflows.
     DbSet<Status> Statuses { get; }
 

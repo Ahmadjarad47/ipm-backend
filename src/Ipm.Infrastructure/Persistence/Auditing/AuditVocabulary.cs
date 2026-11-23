@@ -58,6 +58,7 @@ internal static class AuditVocabulary
         new("config.statuses", AuditAction.Update, null, "status.updated", "status", "عدّل حالة"),
         new("config.workflows", AuditAction.Insert, null, "workflow.created", "workflow", "أنشأ سير عمل"),
         new("config.workflows", AuditAction.Update, null, "workflow.updated", "workflow", "عدّل سير عمل"),
+        new("config.system_settings", AuditAction.Update, null, "settings.updated", "settings", "عدّل إعدادات النظام"),
         new("config.relation_types", AuditAction.Insert, null, "relation-type.created", "relation-type", "أنشأ نوع رابط"),
         new("audit.exports", AuditAction.Insert, null, "audit.exported", "audit", "صدّر سجل التدقيق"),
         new("config.relation_types", AuditAction.Update, null, "relation-type.updated", "relation-type", "عدّل نوع رابط"),

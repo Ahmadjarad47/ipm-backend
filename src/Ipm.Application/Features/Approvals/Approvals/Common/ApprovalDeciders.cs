@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Ipm.Application.Features.Approvals.Approvals.Common;
 
 /// <summary>R6 and R13: who may decide the active stage right now, with the delegations in effect today.</summary>
-internal sealed class ApprovalDeciders(IReadOnlyList<Delegation> inEffect)
+internal sealed class ApprovalDeciders(IReadOnlyList<Delegation> inEffect, bool globalSelfApproval)
 {
     public static async Task<ApprovalDeciders> LoadAsync(IApplicationDbContext db, DateOnly today, CancellationToken cancellationToken) =>
-        new(await db.Delegations.AsNoTracking().Where(d => d.IsActive && d.FromDate <= today && today <= d.ToDate).ToListAsync(cancellationToken));
+        new(
+            await db.Delegations.AsNoTracking().Where(d => d.IsActive && d.FromDate <= today && today <= d.ToDate).ToListAsync(cancellationToken),
+            await db.Settings.AsNoTracking().Select(s => s.AllowSelfApproval).SingleOrDefaultAsync(cancellationToken));
 
     /// <summary>R6: the self-decision exception needs the global setting (part 09, off until then) and the template flag, so for now it never applies.</summary>
-    public static bool SelfDecisionAllowed(ApprovalTemplate? template) => GlobalSelfApproval && template?.AllowSelfApproval == true;
-
-    private static bool GlobalSelfApproval => false;
+    public bool SelfDecisionAllowed(ApprovalTemplate? template) => globalSelfApproval && template?.AllowSelfApproval == true;
 
     /// <summary>The user the caller acts for in the active stage, when they are a delegate and not a direct approver.</summary>
     public Guid? OnBehalfOf(ApprovalRequest request, Guid userId)

@@ -19,18 +19,21 @@ internal static class ProjectWorkStats
                 select new
                 {
                     i.ProjectId,
+                    i.TypeId,
                     i.DueDate,
                     s.Category,
                     IsLeaf = !db.WorkItems.Any(c => c.ParentId == i.Id && !c.IsArchived),
                 })
             .ToListAsync(cancellationToken);
 
+        // Spec 09 R5-e: only the chosen work item types count toward progress (empty = all of them).
+        var included = await db.Settings.AsNoTracking().Select(s => s.ProgressIncludedTypeIds).SingleOrDefaultAsync(cancellationToken) ?? [];
         var result = new Dictionary<Guid, (ProjectProgress, int, int)>();
         foreach (var id in projectIds)
         {
             var own = rows.Where(r => r.ProjectId == id).ToList();
-            var counted = own.Count(r => r.IsLeaf && r.Category != StatusCategory.Cancelled);
-            var done = own.Count(r => r.IsLeaf && r.Category == StatusCategory.Done);
+            var counted = own.Count(r => r.IsLeaf && r.Category != StatusCategory.Cancelled && (included.Count == 0 || included.Contains(r.TypeId)));
+            var done = own.Count(r => r.IsLeaf && r.Category == StatusCategory.Done && (included.Count == 0 || included.Contains(r.TypeId)));
             var overdue = own.Count(r => r.DueDate < today && r.Category is not (StatusCategory.Done or StatusCategory.Cancelled));
             int? percent = counted == 0 ? null : (int)Math.Round(done * 100.0 / counted, MidpointRounding.AwayFromZero);
             result[id] = (new ProjectProgress(percent, done, counted, Rule), own.Count, overdue);
