@@ -57,24 +57,28 @@ internal sealed class GetWorkItemsQueryHandler(IApplicationDbContext db, IUserCo
             items = items.Where(i => i.ProjectId == projectId);
         }
 
-        if (query.TypeId is { } typeId)
+        if (query.TypeIds.Count > 0)
         {
-            items = items.Where(i => i.TypeId == typeId);
+            var typeIds = query.TypeIds;
+            items = items.Where(i => typeIds.Contains(i.TypeId));
         }
 
-        if (query.StatusId is { } statusId)
+        if (query.StatusIds.Count > 0)
         {
-            items = items.Where(i => i.StatusId == statusId);
+            var statusIds = query.StatusIds;
+            items = items.Where(i => statusIds.Contains(i.StatusId));
         }
 
-        if (query.Priority is { } text && Enum.TryParse<Priority>(text, ignoreCase: true, out var priority))
+        if (query.Priorities.Count > 0)
         {
-            items = items.Where(i => i.Priority == priority);
+            var priorities = query.Priorities.Select(p => Enum.Parse<Priority>(p, ignoreCase: true)).ToList();
+            items = items.Where(i => priorities.Contains(i.Priority));
         }
 
-        if (query.AssigneeId is { } assigneeId)
+        if (query.AssigneeIds.Count > 0)
         {
-            items = items.Where(i => i.AssigneeIds.Contains(assigneeId));
+            var assignees = query.AssigneeIds;
+            items = items.Where(i => assignees.Any(a => i.AssigneeIds.Contains(a)));
         }
 
         if (query.Unassigned)

@@ -20,6 +20,7 @@ internal sealed class GetProjectByIdQueryHandler(
         }
 
         var stats = await ProjectWorkStats.LoadAsync(db, [query.Id], RiyadhClock.Today(time), cancellationToken); // R13 of part 05
-        return guarded.Value.Project.ToResponse().With(stats);
+        var repositories = await ProjectRepositories.LoadAsync(db, guarded.Value.Caller, [query.Id], cancellationToken);
+        return guarded.Value.Project.ToResponse().With(stats).With(repositories);
     }
 }

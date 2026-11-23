@@ -12,10 +12,10 @@ internal sealed class GetWorkItemsEndpoint : IEndpoint
                     ISender sender,
                     CancellationToken ct,
                     Guid? projectId = null,
-                    Guid? typeId = null,
-                    Guid? statusId = null,
+                    string? typeId = null,
+                    string? statusId = null,
                     string? priority = null,
-                    Guid? assigneeId = null,
+                    string? assigneeId = null,
                     bool unassigned = false,
                     Guid? parentId = null,
                     bool? hasChildren = null,
@@ -36,10 +36,10 @@ internal sealed class GetWorkItemsEndpoint : IEndpoint
                     int pageSize = 50) =>
                 (await sender.Send(
                     new GetWorkItemsQuery(
-                        projectId, typeId, statusId, priority, assigneeId, unassigned, parentId, hasChildren, hasDependency, unblocked, blockedBy, blocking, q, overdue, includeArchived,
+                        projectId, ListParameter.Guids(typeId, "typeId"), ListParameter.Guids(statusId, "statusId"), ListParameter.Words(priority), ListParameter.Guids(assigneeId, "assigneeId"), unassigned, parentId, hasChildren, hasDependency, unblocked, blockedBy, blocking, q, overdue, includeArchived,
                         createdFrom, createdTo, dueFrom, dueTo, sort, desc, new PageRequest(page, pageSize)), ct))
                     .ToHttpResult())
             .WithTags(WorkTags.WorkItems)
             .WithSummary("عناصر العمل بالمشاريع التي تراها مع الفلاتر والترقيم")
-            .WithDescription("q بالرقم المرجعي أو العنوان. overdue=true للمتأخر (استحقاق قبل اليوم وغير منجز أو ملغى). assigneeId للمكلّف، unassigned للبدون مسؤول. sort: ref title priority dueDate status type createdAt، و desc=true للتنازلي. المؤرشف مخفي إلا مع includeArchived=true. pageSize حتى 200.");
+            .WithDescription("typeId وstatusId وpriority وassigneeId تقبل أكثر من قيمة مفصولة بفواصل (أي واحدة منها). q بالرقم المرجعي أو العنوان. overdue=true للمتأخر (استحقاق قبل اليوم وغير منجز أو ملغى). assigneeId للمكلّف، unassigned للبدون مسؤول. sort: ref title priority dueDate status type createdAt، و desc=true للتنازلي. المؤرشف مخفي إلا مع includeArchived=true. pageSize حتى 200.");
 }

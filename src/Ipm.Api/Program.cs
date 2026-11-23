@@ -71,6 +71,13 @@ builder.Services.AddRateLimiter(options =>
             PermitLimit = builder.Configuration.GetValue("RateLimiting:AuthPerMinute", 10),
             Window = TimeSpan.FromMinutes(1),
         }));
+    options.AddPolicy(SessionCookie.RefreshRateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue("RateLimiting:RefreshPerMinute", 120),
+            Window = TimeSpan.FromMinutes(1),
+        }));
 });
 
 var app = builder.Build();

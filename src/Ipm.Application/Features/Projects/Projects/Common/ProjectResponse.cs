@@ -22,4 +22,5 @@ public sealed record ProjectResponse(
     ProjectProgress? Progress = null,
     int WorkItemCount = 0,
     int OverdueCount = 0,
-    string? RefPattern = null);
+    string? RefPattern = null,
+    IReadOnlyList<Ipm.Application.Features.Git.Repositories.Common.RepositoryResponse>? Repositories = null);

@@ -28,4 +28,5 @@ public sealed record ApprovalResponse(
     DateTimeOffset? ConsumedAt,
     bool Overdue,
     bool CanDecide,
+    DateTimeOffset CreatedAt,
     uint Version);

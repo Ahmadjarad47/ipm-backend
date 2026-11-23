@@ -14,7 +14,7 @@ internal sealed class RefreshSessionEndpoint : IEndpoint
                     ? (await sender.Send(new RefreshSessionCommand(token), ct)).ToSessionResult(response)
                     : AuthErrors.RefreshInvalid.ToProblem())
             .AllowAnonymous()
-            .RequireRateLimiting(SessionCookie.RateLimitPolicy)
+            .RequireRateLimiting(SessionCookie.RefreshRateLimitPolicy)
             .WithTags(IdentityTags.Auth)
             .WithSummary("تجديد الجلسة")
             .WithDescription("يستبدل refresh token (من الـ cookie) بواحد جديد. استعمال توكن قديم مرة ثانية يلغي كل جلسات المستخدم.");

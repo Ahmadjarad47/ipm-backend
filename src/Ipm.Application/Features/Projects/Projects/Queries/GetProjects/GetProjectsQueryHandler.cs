@@ -44,7 +44,8 @@ internal sealed class GetProjectsQueryHandler(IApplicationDbContext db, IUserCon
             .ToListAsync(cancellationToken);
 
         var stats = await ProjectWorkStats.LoadAsync(db, [.. rows.Select(p => p.Id)], RiyadhClock.Today(time), cancellationToken);
-        return new PagedList<ProjectResponse>([.. rows.Select(p => p.ToResponse().With(stats))], Math.Max(query.Page.Page, 1), query.Page.Take, total);
+        var repositories = await ProjectRepositories.LoadAsync(db, caller.Value, [.. rows.Select(p => p.Id)], cancellationToken);
+        return new PagedList<ProjectResponse>([.. rows.Select(p => p.ToResponse().With(stats).With(repositories))], Math.Max(query.Page.Page, 1), query.Page.Take, total);
     }
 
     private static IQueryable<Project> Filter(IQueryable<Project> projects, GetProjectsQuery query)
