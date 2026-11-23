@@ -6,8 +6,13 @@ namespace Ipm.Domain.Git;
 /// A commit or a pull request seen through a webhook or a sync (FR-GIT-02). The refs it mentions are linked automatically (R7); a person
 /// can add or remove links by hand (R11), and those survive later updates of the pull request.
 /// </summary>
-public sealed class GitEvent : AuditableEntity
+public sealed class GitEvent : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditProjectId => ProjectId;
+
+    string? IAuditSubject.AuditLabel => Title;
+
+
     public const int TitleMaxLength = 500;
 
     private GitEvent() { }
@@ -66,6 +71,11 @@ public sealed class GitEvent : AuditableEntity
         gitEvent.Fill(title, branch, sha, author, url, refs, deliveryId);
         gitEvent.PrState = state;
         gitEvent.Kind = state == PullRequestState.Merged ? GitEventKind.Merge : GitEventKind.PullRequest;
+        if (state == PullRequestState.Merged && gitEvent.WorkItemRefs.Count > 0)
+        {
+            gitEvent.RaiseDomainEvent(new Ipm.Domain.Activity.Events.PullRequestMerged(gitEvent.Id, projectId, gitEvent.Title, gitEvent.WorkItemRefs));
+        }
+
         return gitEvent;
     }
 
@@ -73,8 +83,13 @@ public sealed class GitEvent : AuditableEntity
     public void UpdatePullRequest(PullRequestState state, string title, string branch, string sha, string author, string url, IEnumerable<string> refs, string? deliveryId)
     {
         Fill(title, branch, sha, author, url, [.. refs, .. ManualRefs], deliveryId);
+        var becameMerged = state == PullRequestState.Merged && PrState != PullRequestState.Merged;
         PrState = state;
         Kind = state == PullRequestState.Merged ? GitEventKind.Merge : GitEventKind.PullRequest;
+        if (becameMerged && WorkItemRefs.Count > 0)
+        {
+            RaiseDomainEvent(new Ipm.Domain.Activity.Events.PullRequestMerged(Id, ProjectId, Title, WorkItemRefs));
+        }
     }
 
     /// <summary>R11.</summary>

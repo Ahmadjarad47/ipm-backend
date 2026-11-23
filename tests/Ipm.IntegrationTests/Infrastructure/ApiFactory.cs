@@ -52,6 +52,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await using (var scope = Services.CreateAsyncScope())
         {
             await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreatedAsync();
+            await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.ExecuteSqlRawAsync(Ipm.Infrastructure.Persistence.Auditing.AuditChainSql.Install);
         }
 
         await Services.SeedDatabaseAsync(Services.GetRequiredService<IConfiguration>());
@@ -82,7 +83,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await db.Database.ExecuteSqlRawAsync("TRUNCATE test.probe_items, public.audit_log;");
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_no_truncate; TRUNCATE test.probe_items, public.audit_log; ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_no_truncate;");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -109,6 +110,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 options.ReplaceService<IModelCustomizer, ProbeModelCustomizer>());
             services.AddTransient<IEndpoint, ProbeEndpoints>();
             services.RemoveAll<Ipm.Application.Abstractions.Git.IGitRemote>();
+            services.AddScoped<Ipm.Application.Abstractions.Events.IDomainEventHandler<Ipm.Domain.Activity.Events.WorkItemStatusChanged>, FailingStatusHandler>();
             services.AddSingleton(GitRemote);
             services.AddSingleton<Ipm.Application.Abstractions.Git.IGitRemote>(GitRemote);
         });

@@ -7,8 +7,13 @@ namespace Ipm.Domain.Git;
 /// A Git repository linked to a project (FR-GIT-01). The access token and the webhook secret are stored encrypted and never returned or
 /// audited (R15). Disconnecting keeps the record and its events but wipes both secrets, so it can no longer authenticate deliveries (R2).
 /// </summary>
-public sealed partial class GitRepository : AuditableEntity
+public sealed partial class GitRepository : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditProjectId => ProjectId;
+
+    string? IAuditSubject.AuditLabel => Name;
+
+
     public const int NameMaxLength = 200;
 
     private GitRepository() { }

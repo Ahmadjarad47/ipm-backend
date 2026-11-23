@@ -13,4 +13,5 @@ public static class Schemas
     public const string Work = "work";
     public const string Approvals = "approvals";
     public const string Git = "git";
+    public const string Activity = "activity";
 }

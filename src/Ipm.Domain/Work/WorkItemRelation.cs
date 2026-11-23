@@ -6,8 +6,11 @@ namespace Ipm.Domain.Work;
 /// A link from one work item (the source) to another (the target) of a relation type. It is stored in one direction only; the
 /// other side is read through the inverse name of the type. Never edited: to change it, delete it and create another (R1).
 /// </summary>
-public sealed class WorkItemRelation : AuditableEntity
+public sealed class WorkItemRelation : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditWorkItemId => SourceId;
+
+
     private WorkItemRelation() { }
 
     private WorkItemRelation(Guid id) : base(id) { }

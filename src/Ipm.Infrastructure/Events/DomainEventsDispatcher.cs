@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Ipm.Infrastructure.Events;
 
 /// <summary>Resolves every <see cref="IDomainEventHandler{TEvent}"/> for each event and runs them in order.</summary>
-public sealed class DomainEventsDispatcher(IServiceProvider serviceProvider)
+public sealed class DomainEventsDispatcher(IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger<DomainEventsDispatcher> logger)
 {
     private static readonly ConcurrentDictionary<Type, (Type HandlerType, MethodInfo Handle)> Cache = new ConcurrentDictionary<Type, (Type HandlerType, MethodInfo Handle)>();
 
@@ -23,7 +23,15 @@ public sealed class DomainEventsDispatcher(IServiceProvider serviceProvider)
 
             foreach (object? handler in serviceProvider.GetServices(handlerType))
             {
-                await (Task)handle.Invoke(handler, [domainEvent, cancellationToken])!;
+                // The change is already committed: a failing reaction (a notification, a cache) is logged and never fails or undoes the request.
+                try
+                {
+                    await (Task)handle.Invoke(handler, [domainEvent, cancellationToken])!;
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    Microsoft.Extensions.Logging.LoggerExtensions.LogError(logger, e, "Handler {Handler} failed for {Event}", handler!.GetType().Name, domainEvent.GetType().Name);
+                }
             }
         }
     }

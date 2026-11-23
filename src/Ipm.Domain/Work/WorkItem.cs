@@ -10,8 +10,15 @@ namespace Ipm.Domain.Work;
 /// The status moves only through a transition (R7), the type only through a type change (R10), and the parent only through
 /// <see cref="SetParent"/> (R6). Never deleted, only archived (R3).
 /// </summary>
-public sealed class WorkItem : AuditableEntity
+public sealed class WorkItem : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditProjectId => ProjectId;
+
+    Guid? IAuditSubject.AuditWorkItemId => Id;
+
+    string? IAuditSubject.AuditLabel => Ref;
+
+
     public const int TitleMaxLength = 200;
     public const int DescriptionMaxLength = 20000;
 
@@ -82,13 +89,26 @@ public sealed class WorkItem : AuditableEntity
         Priority = priority;
         StartDate = startDate;
         DueDate = dueDate;
-        AssigneeIds = [.. assigneeIds.Distinct()];
+        ApplyAssignees(assigneeIds);
         Fields = WorkItemFieldValues.Normalize(fields);
         return Result.Success();
     }
 
     /// <summary>R12: the bulk actions change one thing at a time.</summary>
-    public void SetAssignees(IEnumerable<Guid> assigneeIds) => AssigneeIds = [.. assigneeIds.Distinct()];
+    public void SetAssignees(IEnumerable<Guid> assigneeIds) => ApplyAssignees(assigneeIds);
+
+    /// <summary>Part 08 R11: the one place the assignees change, so the people added and removed are told.</summary>
+    private void ApplyAssignees(IEnumerable<Guid> assigneeIds)
+    {
+        var previous = AssigneeIds;
+        AssigneeIds = [.. assigneeIds.Distinct()];
+        var added = AssigneeIds.Where(a => !previous.Contains(a)).ToList();
+        var removed = previous.Where(a => !AssigneeIds.Contains(a)).ToList();
+        if (added.Count > 0 || removed.Count > 0)
+        {
+            RaiseDomainEvent(new Ipm.Domain.Activity.Events.WorkItemAssigneesChanged(Id, ProjectId, Ref, Title, added, removed));
+        }
+    }
 
     /// <summary>R12.</summary>
     public void SetPriority(Priority priority) => Priority = priority;
@@ -112,7 +132,15 @@ public sealed class WorkItem : AuditableEntity
     public void Archive() => IsArchived = true;
 
     /// <summary>R7: the only way the status changes. The workflow rules are checked by the handler.</summary>
-    public void MoveTo(Guid statusId) => StatusId = statusId;
+    public void MoveTo(Guid statusId)
+    {
+        var from = StatusId;
+        StatusId = statusId;
+        if (from != statusId)
+        {
+            RaiseDomainEvent(new Ipm.Domain.Activity.Events.WorkItemStatusChanged(Id, ProjectId, Ref, Title, from, statusId));
+        }
+    }
 
     /// <summary>R6: the handler checks the parent (same project, allowed type, no cycle).</summary>
     public void SetParent(Guid? parentId) => ParentId = parentId;

@@ -49,7 +49,9 @@ public sealed class Delegation : AuditableEntity
             return Error.Validation("Delegation.ToSelf", "لا يمكن التفويض لنفسك.");
         }
 
-        return new Delegation { FromUserId = fromUserId, ToUserId = toUserId, FromDate = fromDate, ToDate = toDate, Reason = reason.Trim() };
+        var delegation = new Delegation { FromUserId = fromUserId, ToUserId = toUserId, FromDate = fromDate, ToDate = toDate, Reason = reason.Trim() };
+        delegation.RaiseDomainEvent(new Ipm.Domain.Activity.Events.DelegationCreated(delegation.Id, fromUserId, toUserId, fromDate, toDate));
+        return delegation;
     }
 
     /// <summary>True when the delegation is on and <paramref name="today"/> is inside the window.</summary>

@@ -34,6 +34,7 @@ public static class DependencyInjection
         AddDomainEventHandlers(services);
 
         services.AddScoped<IAccessService, AccessService>();
+        services.AddScoped<Features.Activity.Notifications.Common.NotificationEmitter>();
 
         return services;
     }

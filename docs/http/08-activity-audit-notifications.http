@@ -1,0 +1,61 @@
+### الجزء 08: التدقيق والنشاط والإشعارات
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### ترويسات اختيارية بتتسجّل بالتدقيق: X-Correlation-Id (يجمع تغييرات طلب واحد) وX-Client: ui (المصدر ui بدل api).
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### سجل التدقيق (audit.view يشوف كل شي، غيره مشاريعه فقط). from وto يوم بتوقيت الرياض
+GET {{api}}/audit?from=2026-01-01&pageSize=50
+Authorization: Bearer {{token}}
+
+### فلاتر: مشروع، إجراء، مصدر، معرّف ربط، أمان فقط، بحث
+GET {{api}}/audit?action=workItem.transition&source=ui&search=ERP
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/audit?security=true
+Authorization: Bearer {{token}}
+
+### فحص سلسلة الـ hash (audit.view)
+GET {{api}}/audit/verify
+Authorization: Bearer {{token}}
+
+### تصدير CSV (audit.export، حتى 50,000 سطر). التصدير نفسه بيتسجّل
+GET {{api}}/audit/export?from=2026-01-01
+Authorization: Bearer {{token}}
+
+### نشاط مشروع وعنصر عمل
+GET {{api}}/projects/01970000-0000-7000-8007-000000000001/activity
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/work-items/00000000-0000-0000-0000-000000000000/activity
+Authorization: Bearer {{token}}
+
+### إشعاراتي (unread=true لغير المقروء) وعدّاد الشارة
+GET {{api}}/notifications?unread=true&pageSize=30
+Authorization: Bearer {{token}}
+
+###
+GET {{api}}/notifications/unread-count
+Authorization: Bearer {{token}}
+
+### تعليم إشعار كمقروء
+PATCH {{api}}/notifications/00000000-0000-0000-0000-000000000000/read
+Authorization: Bearer {{token}}
+
+### تعليم الكل (أو مشروع واحد بـ projectId)
+POST {{api}}/notifications/read-all
+Authorization: Bearer {{token}}

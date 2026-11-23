@@ -6,8 +6,13 @@ namespace Ipm.Domain.Work;
 /// A comment on a project or a work item (FR-COL). The text history and the @mentions are columns of the comment itself, so editing it
 /// moves its version (ETag) and shows in audit_log. Never removed: deleting marks it, and readers get it without text (R15).
 /// </summary>
-public sealed class Comment : AuditableEntity
+public sealed class Comment : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditProjectId => SubjectType == CommentSubjectType.Project ? SubjectId : null;
+
+    Guid? IAuditSubject.AuditWorkItemId => SubjectType == CommentSubjectType.WorkItem ? SubjectId : null;
+
+
     public const int BodyMaxLength = 5000;
 
     private Comment() { }
@@ -42,6 +47,11 @@ public sealed class Comment : AuditableEntity
         comment.Body = text;
         comment.MentionedUserIds = [.. mentionedUserIds.Distinct()];
         comment.Revisions = [new CommentRevision(text, at)];
+        if (comment.MentionedUserIds.Count > 0)
+        {
+            comment.RaiseDomainEvent(new Ipm.Domain.Activity.Events.CommentMentioned(comment.Id, subjectType, subjectId, comment.MentionedUserIds, Preview(text)));
+        }
+
         return comment;
     }
 
@@ -66,10 +76,19 @@ public sealed class Comment : AuditableEntity
         var text = body.Trim();
         Body = text;
         IsEdited = true;
+        var previous = MentionedUserIds;
         MentionedUserIds = [.. mentionedUserIds.Distinct()];
+        var added = MentionedUserIds.Where(u => !previous.Contains(u)).ToList();
+        if (added.Count > 0)
+        {
+            RaiseDomainEvent(new Ipm.Domain.Activity.Events.CommentMentioned(Id, SubjectType, SubjectId, added, Preview(text)));
+        }
+
         Revisions = [.. Revisions, new CommentRevision(text, now)];
         return Result.Success();
     }
+
+    private static string Preview(string text) => text.Length > 80 ? text[..80] : text;
 
     /// <summary>R15: the permission rule (the author, or files.delete) is checked by the handler.</summary>
     public Result Delete()

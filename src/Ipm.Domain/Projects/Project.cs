@@ -8,8 +8,13 @@ namespace Ipm.Domain.Projects;
 /// workflow (R9). Never deleted, only archived; an archived project is read-only (R6). The <see cref="Code"/> never changes (R1).
 /// Members are rows of their own, so every member change moves <see cref="MembersRevision"/> and with it the project ETag.
 /// </summary>
-public sealed partial class Project : AuditableEntity
+public sealed partial class Project : AuditableEntity, IAuditSubject
 {
+    Guid? IAuditSubject.AuditProjectId => Id;
+
+    string? IAuditSubject.AuditLabel => Name;
+
+
     public const int NameMaxLength = 200;
     public const int CodeMaxLength = 10;
 
@@ -135,7 +140,15 @@ public sealed partial class Project : AuditableEntity
     public void Unarchive() => IsArchived = false;
 
     /// <summary>R9: the only way the status changes. The workflow rules are checked by the handler.</summary>
-    public void MoveTo(Guid statusId) => StatusId = statusId;
+    public void MoveTo(Guid statusId)
+    {
+        var from = StatusId;
+        StatusId = statusId;
+        if (from != statusId)
+        {
+            RaiseDomainEvent(new Ipm.Domain.Activity.Events.ProjectStatusChanged(Id, Name, from, statusId));
+        }
+    }
 
     /// <summary>
     /// R7: replaces the whole member list: one entry per user, the owner included. Existing members keep their row when only the
@@ -154,6 +167,7 @@ public sealed partial class Project : AuditableEntity
         }
 
         var changed = false;
+        var before = _members.Select(m => m.UserId).ToList();
         foreach (var gone in _members.Where(m => members.All(w => w.UserId != m.UserId)).ToList())
         {
             _members.Remove(gone);
@@ -178,6 +192,13 @@ public sealed partial class Project : AuditableEntity
         if (changed)
         {
             MembersRevision++;
+            var added = members.Select(m => m.UserId).Where(u => !before.Contains(u)).ToList();
+            var removed = before.Where(u => members.All(m => m.UserId != u)).ToList();
+            if (added.Count > 0 || removed.Count > 0)
+            {
+                RaiseDomainEvent(new Ipm.Domain.Activity.Events.ProjectMembersChanged(Id, Name, added, removed));
+            }
+
         }
 
         return Result.Success();
