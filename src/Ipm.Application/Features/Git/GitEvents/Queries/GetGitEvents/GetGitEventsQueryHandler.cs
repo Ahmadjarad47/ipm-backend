@@ -47,7 +47,7 @@ internal sealed class GetGitEventsQueryHandler(IApplicationDbContext db, IUserCo
         }
 
         var total = await events.CountAsync(cancellationToken);
-        var rows = await events.OrderByDescending(e => e.CreatedAt).ThenByDescending(e => e.Id).Skip(query.Page.Skip).Take(query.Page.Take).ToListAsync(cancellationToken);
+        var rows = await events.OrderByDescending(e => e.OccurredAt ?? e.CreatedAt).ThenByDescending(e => e.Id).Skip(query.Page.Skip).Take(query.Page.Take).ToListAsync(cancellationToken);
         return new PagedList<GitEventResponse>([.. rows.Select(e => e.ToResponse())], Math.Max(query.Page.Page, 1), query.Page.Take, total);
     }
 }

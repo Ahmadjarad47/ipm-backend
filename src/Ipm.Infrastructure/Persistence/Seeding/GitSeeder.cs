@@ -64,8 +64,8 @@ public static class GitSeeder
             var sha = Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"demo-{n}")))[..40];
             var url = $"https://git.example.com/{repositories[repo - 1].Name}/commit/{sha}";
             db.GitEvents.Add(pr is { } number
-                ? GitEvent.PullRequest(projectId, RepoId(repo), number, kind == "merged" ? PullRequestState.Merged : PullRequestState.Open, title, branch, sha, author, url, [reference], $"seed-{n}", EventId(n))
-                : GitEvent.Push(projectId, RepoId(repo), title, branch, sha, author, url, [reference], $"seed-{n}", EventId(n)));
+                ? GitEvent.PullRequest(projectId, RepoId(repo), number, kind == "merged" ? PullRequestState.Merged : PullRequestState.Open, title, branch, sha, author, url, [reference], $"seed-{n}", id: EventId(n))
+                : GitEvent.Push(projectId, RepoId(repo), title, branch, sha, author, url, [reference], $"seed-{n}", id: EventId(n)));
         }
 
         await db.SaveChangesAsync(cancellationToken);

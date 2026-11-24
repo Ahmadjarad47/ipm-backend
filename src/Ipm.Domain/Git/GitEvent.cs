@@ -48,26 +48,32 @@ public sealed class GitEvent : AuditableEntity, IAuditSubject
 
     public string? DeliveryId { get; private set; }
 
+    /// <summary>When it happened on the Git server: the commit time, or the pull request's open/merge/close time. Null when the provider did not say.</summary>
+    public DateTimeOffset? OccurredAt { get; private set; }
+
     /// <summary><paramref name="id"/> is only given by the seed, to keep it idempotent.</summary>
     public static GitEvent Push(
-        Guid projectId, Guid repositoryId, string title, string branch, string sha, string author, string url, IEnumerable<string> refs, string? deliveryId, Guid? id = null)
+        Guid projectId, Guid repositoryId, string title, string branch, string sha, string author, string url, IEnumerable<string> refs, string? deliveryId,
+        DateTimeOffset? occurredAt = null, Guid? id = null)
     {
         var gitEvent = id is { } fixedId ? new GitEvent(fixedId) : new GitEvent();
         gitEvent.ProjectId = projectId;
         gitEvent.RepositoryId = repositoryId;
         gitEvent.Kind = GitEventKind.Push;
+        gitEvent.OccurredAt = occurredAt;
         gitEvent.Fill(title, branch, sha, author, url, refs, deliveryId);
         return gitEvent;
     }
 
     public static GitEvent PullRequest(
         Guid projectId, Guid repositoryId, int number, PullRequestState state, string title, string branch, string sha, string author, string url,
-        IEnumerable<string> refs, string? deliveryId, Guid? id = null)
+        IEnumerable<string> refs, string? deliveryId, DateTimeOffset? occurredAt = null, Guid? id = null)
     {
         var gitEvent = id is { } fixedId ? new GitEvent(fixedId) : new GitEvent();
         gitEvent.ProjectId = projectId;
         gitEvent.RepositoryId = repositoryId;
         gitEvent.PrNumber = number;
+        gitEvent.OccurredAt = occurredAt;
         gitEvent.Fill(title, branch, sha, author, url, refs, deliveryId);
         gitEvent.PrState = state;
         gitEvent.Kind = state == PullRequestState.Merged ? GitEventKind.Merge : GitEventKind.PullRequest;
@@ -80,9 +86,11 @@ public sealed class GitEvent : AuditableEntity, IAuditSubject
     }
 
     /// <summary>R7: a later delivery of the same pull request moves its state and keeps the links made by hand.</summary>
-    public void UpdatePullRequest(PullRequestState state, string title, string branch, string sha, string author, string url, IEnumerable<string> refs, string? deliveryId)
+    public void UpdatePullRequest(PullRequestState state, string title, string branch, string sha, string author, string url, IEnumerable<string> refs, string? deliveryId,
+        DateTimeOffset? occurredAt = null)
     {
         Fill(title, branch, sha, author, url, [.. refs, .. ManualRefs], deliveryId);
+        OccurredAt = occurredAt ?? OccurredAt;
         var becameMerged = state == PullRequestState.Merged && PrState != PullRequestState.Merged;
         PrState = state;
         Kind = state == PullRequestState.Merged ? GitEventKind.Merge : GitEventKind.PullRequest;
@@ -91,6 +99,9 @@ public sealed class GitEvent : AuditableEntity, IAuditSubject
             RaiseDomainEvent(new Ipm.Domain.Activity.Events.PullRequestMerged(Id, ProjectId, Title, WorkItemRefs));
         }
     }
+
+    /// <summary>Fills in the Git server's time for an event stored before it was known (a later sync or delivery of the same commit).</summary>
+    public void RecordOccurredAt(DateTimeOffset occurredAt) => OccurredAt ??= occurredAt;
 
     /// <summary>R11.</summary>
     public Result Link(string reference)

@@ -858,6 +858,10 @@ namespace Ipm.Infrastructure.Persistence.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("manual_refs");
 
+                    b.Property<DateTimeOffset?>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
                     b.Property<int?>("PrNumber")
                         .HasColumnType("integer")
                         .HasColumnName("pr_number");
