@@ -117,6 +117,23 @@ public sealed class GitWebhookTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task A_commit_shows_the_time_it_was_made_not_the_time_it_was_received()
+    {
+        var (admin, project, repo, reference) = await SetupAsync();
+        using var _ = admin;
+
+        await DeliverAsync(factory, "gitea", repo, PushBody($"{reference} old work", timestamp: "2026-10-20T09:15:00+03:00"));
+        await DeliverAsync(factory, "gitea", repo, PushBody($"{reference} work without a time"));
+
+        var events = (await EventsAsync(admin, project)).GetProperty("items");
+        Assert.Equal(2, events.GetArrayLength());
+        var withoutTime = events[0];
+        var old = events[1];
+        Assert.Equal(new DateTimeOffset(2026, 10, 20, 6, 15, 0, TimeSpan.Zero), old.GetProperty("occurredAt").GetDateTimeOffset());
+        Assert.Equal(withoutTime.GetProperty("createdAt").GetDateTimeOffset(), withoutTime.GetProperty("occurredAt").GetDateTimeOffset());
+    }
+
+    [Fact]
     public async Task Scenario_8_R7_a_pull_request_is_one_record_that_moves_state_and_keeps_manual_links()
     {
         var (admin, project, repo, reference) = await SetupAsync();

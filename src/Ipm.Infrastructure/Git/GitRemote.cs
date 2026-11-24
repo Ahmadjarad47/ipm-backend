@@ -63,11 +63,15 @@ internal sealed class GitRemote(HttpClient client) : IGitRemote
 
         if (provider == GitProvider.Gitlab)
         {
-            return new RemoteCommit(Text(commit, "id"), Text(commit, "message"), Text(commit, "author_name"), Text(commit, "web_url"));
+            return new RemoteCommit(
+                Text(commit, "id"), Text(commit, "message"), Text(commit, "author_name"), Text(commit, "web_url"),
+                GitTime.Parse(Text(commit, "authored_date")) ?? GitTime.Parse(Text(commit, "committed_date")) ?? GitTime.Parse(Text(commit, "created_at")));
         }
 
         var inner = commit.TryGetProperty("commit", out var c) ? c : default;
-        var author = inner.ValueKind == JsonValueKind.Object && inner.TryGetProperty("author", out var a) ? Text(a, "name") : string.Empty;
-        return new RemoteCommit(Text(commit, "sha"), Text(inner, "message"), author, Text(commit, "html_url"));
+        var authorNode = inner.ValueKind == JsonValueKind.Object && inner.TryGetProperty("author", out var a) ? a : default;
+        var committerNode = inner.ValueKind == JsonValueKind.Object && inner.TryGetProperty("committer", out var m) ? m : default;
+        var when = GitTime.Parse(Text(authorNode, "date")) ?? GitTime.Parse(Text(committerNode, "date")) ?? GitTime.Parse(Text(commit, "created"));
+        return new RemoteCommit(Text(commit, "sha"), Text(inner, "message"), Text(authorNode, "name"), Text(commit, "html_url"), when);
     }
 }

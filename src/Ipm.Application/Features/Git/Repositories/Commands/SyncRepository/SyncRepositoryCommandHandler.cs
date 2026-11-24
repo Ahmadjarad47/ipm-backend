@@ -57,7 +57,8 @@ internal sealed class SyncRepositoryCommandHandler(
         foreach (var commit in fetched.Value)
         {
             var (added, refs) = await GitIngestion.IngestCommitAsync(
-                db, repository, project, repository.DefaultBranch, commit.Sha, commit.Message, commit.Author, commit.Url, $"sync-{repository.Id}-{commit.Sha[..Math.Min(7, commit.Sha.Length)]}", seen, cancellationToken);
+                db, repository, project, repository.DefaultBranch, commit.Sha, commit.Message, commit.Author, commit.Url, $"sync-{repository.Id}-{commit.Sha[..Math.Min(7, commit.Sha.Length)]}", seen, cancellationToken,
+                commit.CommittedAt);
             if (added)
             {
                 ingested++;

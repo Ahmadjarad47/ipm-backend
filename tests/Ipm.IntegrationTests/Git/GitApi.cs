@@ -71,11 +71,14 @@ internal static class GitApi
         return await client.SendAsync(request);
     }
 
-    public static string PushBody(string message, string branch = "main", string? sha = null) =>
+    public static string PushBody(string message, string branch = "main", string? sha = null, string? timestamp = null) =>
         JsonSerializer.Serialize(new
         {
             @ref = $"refs/heads/{branch}",
-            commits = new[] { new { id = sha ?? Guid.NewGuid().ToString("N") + "00000000", message, url = "https://git.example.com/acme/app/commit/x", author = new { username = "dev", name = "Dev" } } },
+            commits = new[]
+            {
+                new { id = sha ?? Guid.NewGuid().ToString("N") + "00000000", message, url = "https://git.example.com/acme/app/commit/x", author = new { username = "dev", name = "Dev" }, timestamp },
+            },
         });
 
     public static string PrBody(int number, string title, string action = "opened", bool merged = false, string branch = "feature/x") =>
