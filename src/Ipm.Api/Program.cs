@@ -6,6 +6,7 @@ using Ipm.Api.Endpoints.Identity.Auth.Common;
 using Ipm.Api.Infrastructure;
 using Ipm.Application;
 using Ipm.Infrastructure;
+using Ipm.Infrastructure.Realtime;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
@@ -129,6 +130,10 @@ if (app.Configuration.GetValue<bool>("OpenApi:Enabled"))
 }
 
 app.MapHealthChecks("/health");
+
+// Real-time notifications (spec 08 R11). Mounted under /api/v1 so it rides the existing nginx/dev-proxy
+// rule for that prefix — only the WebSocket upgrade headers needed adding there, no new proxy route.
+app.MapHub<NotificationsHub>("/api/v1/hubs/notifications").RequireAuthorization();
 
 // Everything under /api/v1 needs a signed-in user unless an endpoint says AllowAnonymous.
 var api = app.MapGroup("/api/v1").RequireAuthorization();

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Ipm.IntegrationTests.Git;
 using Ipm.IntegrationTests.Infrastructure;
+using Microsoft.AspNetCore.SignalR.Client;
 using static Ipm.IntegrationTests.Approvals.ApprovalApi;
 using static Ipm.IntegrationTests.Identity.IdentityApi;
 using static Ipm.IntegrationTests.Projects.ProjectApi;
@@ -217,6 +218,66 @@ public sealed partial class NotificationTests(ApiFactory factory)
         var samples = (await GetAsync(reem, "/api/v1/notifications?pageSize=100")).Body.GetProperty("items").EnumerateArray().Where(n => n.GetProperty("title").GetString() == "أُضفت إلى مشروع" && n.GetProperty("body").GetString() == "نظام تخطيط الموارد").ToList();
         Assert.Single(samples);
         Assert.True(samples[0].GetProperty("read").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Scenario_15_R12_several_notifications_are_marked_read_in_one_call()
+    {
+        using var admin = await factory.AdminClientAsync();
+        using var reem = await factory.SignedInClientAsync("reem", ApiFactory.DemoPassword);
+        var (project, _) = await NewProjectAsync(admin);
+        var reemId = await UserIdAsync(admin, "reem");
+        await CreateAsync(admin, project, assignees: [reemId]);
+        await CreateAsync(admin, project, assignees: [reemId]);
+
+        var mine = await MineAsync(reem, Of("work-item.assigned", project: project));
+        Assert.Equal(2, mine.Count);
+        var ids = mine.Select(n => n.GetProperty("id").GetGuid()).ToArray();
+
+        // somebody else's id in the same batch is silently skipped, not an error
+        var otherId = (await MineAsync(admin)).Select(n => n.GetProperty("id").GetGuid()).FirstOrDefault();
+        var batch = await reem.PostAsJsonAsync(new Uri("/api/v1/notifications/read-batch", UriKind.Relative), new { ids = ids.Append(otherId) });
+        Assert.Equal(HttpStatusCode.NoContent, batch.StatusCode);
+
+        var after = await MineAsync(reem, Of("work-item.assigned", project: project));
+        Assert.All(after, n => Assert.True(n.GetProperty("read").GetBoolean()));
+
+        // reading again is harmless
+        Assert.Equal(HttpStatusCode.NoContent, (await reem.PostAsJsonAsync(new Uri("/api/v1/notifications/read-batch", UriKind.Relative), new { ids })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Scenario_16_R11_a_new_notification_is_pushed_live_over_the_notifications_hub()
+    {
+        using var admin = await factory.AdminClientAsync();
+        using var reem = await factory.SignedInClientAsync("reem", ApiFactory.DemoPassword);
+        var reemToken = reem.DefaultRequestHeaders.Authorization!.Parameter!;
+
+        await using var connection = new HubConnectionBuilder()
+            .WithUrl(new Uri(factory.Server.BaseAddress, "/api/v1/hubs/notifications"), options =>
+            {
+                options.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler();
+                options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.LongPolling;
+                options.AccessTokenProvider = () => Task.FromResult<string?>(reemToken);
+            })
+            .Build();
+
+        var received = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        connection.On<JsonElement>("notificationReceived", n => received.TrySetResult(n));
+        await connection.StartAsync();
+
+        var (project, _) = await NewProjectAsync(admin);
+        var reemId = await UserIdAsync(admin, "reem");
+        var (itemId, _, item) = await CreateAsync(admin, project, assignees: [reemId]);
+        var reference = item.GetProperty("ref").GetString()!;
+
+        var pushed = await received.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal("work-item.assigned", pushed.GetProperty("kind").GetString());
+        Assert.Contains(reference, pushed.GetProperty("body").GetString(), StringComparison.Ordinal);
+        Assert.Equal($"/work-items/{itemId}", pushed.GetProperty("link").GetString());
+
+        // the push only ever follows the commit: by the time it arrives the row is already readable over REST too
+        Assert.Contains(await MineAsync(reem), n => n.GetProperty("id").GetGuid() == pushed.GetProperty("id").GetGuid());
     }
 
     [GeneratedRegex(@"^/(work-items/[0-9a-f-]{36}|approvals(/[0-9a-f-]{36})?|projects(/[0-9a-f-]{36})?)$")]
