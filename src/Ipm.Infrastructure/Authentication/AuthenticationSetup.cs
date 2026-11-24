@@ -53,7 +53,22 @@ internal static class AuthenticationSetup
                     ClockSkew = TimeSpan.FromSeconds(30),
                     NameClaimType = "name",
                 };
-                bearer.Events = new JwtBearerEvents { OnTokenValidated = RejectStaleSessionsAsync };
+                bearer.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = RejectStaleSessionsAsync,
+                    // WebSocket connections cannot send an Authorization header, so SignalR's documented pattern is a
+                    // query-string token — accepted only on the hub path, so REST endpoints still require the header.
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/api/v1/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
             });
 
         services.AddAuthorization();

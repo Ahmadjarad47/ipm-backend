@@ -3,6 +3,7 @@ using Ipm.Application.Abstractions.Authentication;
 using Ipm.Application.Abstractions.Caching;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Application.Abstractions.Git;
+using Ipm.Application.Abstractions.Realtime;
 using Ipm.Application.Abstractions.Security;
 using Ipm.Infrastructure.Git;
 using Ipm.Infrastructure.Security;
@@ -13,6 +14,8 @@ using Ipm.Infrastructure.Persistence;
 using Ipm.Infrastructure.Persistence.Auditing;
 using Ipm.Infrastructure.Persistence.Interceptors;
 using Ipm.Infrastructure.Persistence.Seeding;
+using Ipm.Infrastructure.Realtime;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +53,13 @@ public static class DependencyInjection
         services.AddHealthChecks()
             .AddNpgSql(database, name: "postgresql")
             .AddRedis(cache, name: "redis");
+
+        // Single API instance today (see docker-compose.yml), so the default in-memory SignalR server is enough.
+        // Scaling to several replicas would need a backplane: services.AddSignalR().AddStackExchangeRedis(cache);
+        // (Redis is already provisioned above for the permission cache, so that is a one-line change later.)
+        services.AddSignalR();
+        services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
+        services.AddScoped<INotificationPusher, SignalRNotificationPusher>();
 
         return services;
     }
