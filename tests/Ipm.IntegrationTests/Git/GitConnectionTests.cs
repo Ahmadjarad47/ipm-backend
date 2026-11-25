@@ -96,6 +96,38 @@ public sealed class GitConnectionTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Scenario_4_R2_disconnect_clears_the_sync_error_and_reconnecting_reuses_the_record_and_its_events()
+    {
+        using var admin = await factory.AdminClientAsync();
+        var (project, _) = await NewProjectAsync(admin);
+        var (repo, _) = await ConnectAsync(admin, project, name: "acme/again");
+        var reposUri = new Uri($"/api/v1/projects/{project}/repositories", UriKind.Relative);
+        Assert.Equal(HttpStatusCode.OK, (await DeliverAsync(factory, "gitea", repo, PushBody("before"))).StatusCode);
+
+        factory.GitRemote.Next = Ipm.Domain.Common.Error.BadGateway("Git.RemoteFailed", "رفض خادم Git الطلب (401).");
+        Assert.Equal(HttpStatusCode.BadGateway, (await admin.PostAsJsonAsync(new Uri($"/api/v1/projects/{project}/git-sync", UriKind.Relative), new { repositoryId = repo })).StatusCode);
+        factory.GitRemote.Next = new List<Ipm.Application.Abstractions.Git.RemoteCommit>();
+
+        var disconnected = await ReadAsync(await admin.PostAsync(new Uri($"/api/v1/projects/{project}/repositories/{repo}/disconnect", UriKind.Relative), null));
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, disconnected.GetProperty("lastSyncError").ValueKind);
+
+        var again = await admin.PostAsJsonAsync(reposUri, Body(url: "https://git.example.com/acme/again", name: "acme/again", token: "tok-new"));
+        Assert.Equal(HttpStatusCode.Created, again.StatusCode);
+        var reconnected = await ReadAsync(again);
+        Assert.Equal(repo, reconnected.GetProperty("id").GetGuid());
+        Assert.True(reconnected.GetProperty("connected").GetBoolean());
+        Assert.True(reconnected.GetProperty("hasCredential").GetBoolean());
+        Assert.False(string.IsNullOrEmpty(reconnected.GetProperty("webhookSecret").GetString()));
+
+        Assert.Equal(1, (await ReadAsync(await admin.GetAsync(reposUri))).GetArrayLength());
+        Assert.Equal(1, (await EventsAsync(admin, project)).GetProperty("items").GetArrayLength());
+
+        Assert.Equal(HttpStatusCode.OK, (await admin.PostAsJsonAsync(new Uri($"/api/v1/projects/{project}/git-sync", UriKind.Relative), new { repositoryId = repo })).StatusCode);
+        Assert.Equal("tok-new", factory.GitRemote.LastToken);
+        Assert.Equal(HttpStatusCode.Conflict, (await admin.PostAsJsonAsync(reposUri, Body(name: "acme/again"))).StatusCode);
+    }
+
+    [Fact]
     public async Task Scenario_14_R14_an_archived_project_refuses_connecting_but_still_ingests()
     {
         using var admin = await factory.AdminClientAsync();

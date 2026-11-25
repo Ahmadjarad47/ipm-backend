@@ -87,6 +87,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IAuditLogReader, AuditLogReader>();
+        services.AddSingleton<Ipm.Application.Abstractions.Reports.IWorkReportWriter, Ipm.Infrastructure.Reports.ClosedXmlWorkReportWriter>();
         services.AddScoped<Ipm.Application.Abstractions.Settings.IOrganizationSettings, OrganizationSettings>();
         services.AddHostedService<SettingsRefresher>();
         services.AddScoped<Ipm.Application.Abstractions.Auditing.IAuditFeed, AuditFeed>();

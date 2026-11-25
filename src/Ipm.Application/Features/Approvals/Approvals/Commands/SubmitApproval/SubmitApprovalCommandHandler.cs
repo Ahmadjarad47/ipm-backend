@@ -17,6 +17,8 @@ internal sealed class SubmitApprovalCommandHandler(
     IApplicationDbContext db, IUnitOfWork unitOfWork, IUserContext currentUser, IAccessService access, ISecurityEventLog securityLog, TimeProvider time)
     : ICommandHandler<SubmitApprovalCommand, ApprovalResponse>
 {
+    private const string OverrideReason = "قدّمه صاحب صلاحية التجاوز فاعتُمد مباشرة";
+
     public async ValueTask<Result<ApprovalResponse>> Handle(SubmitApprovalCommand command, CancellationToken cancellationToken)
     {
         var projectId = await ApprovalSubjects.ProjectIdAsync(db, command.SubjectType, command.SubjectId, cancellationToken);
@@ -102,6 +104,15 @@ internal sealed class SubmitApprovalCommandHandler(
             proposed = checkedChanges.Value;
         }
 
+        if (!sensitive)
+        {
+            var state = await ApprovalEligibility.CheckAsync(db, template, subject, action, time.GetUtcNow(), cancellationToken);
+            if (state is not null)
+            {
+                return state;
+            }
+        }
+
         if (await db.ApprovalRequests.AnyAsync(
                 r => r.SubjectType == command.SubjectType && r.SubjectId == command.SubjectId && r.TemplateId == template.Id && r.Status == ApprovalStatus.PendingApproval,
                 cancellationToken))
@@ -120,6 +131,26 @@ internal sealed class SubmitApprovalCommandHandler(
             template, command.SubjectType, command.SubjectId, project.Id, $"{template.Name}: {subject.Label}", caller.UserId,
             action, command.TargetStatusId, snapshot, resolved, time.GetUtcNow(), proposedChanges: proposed);
         db.ApprovalRequests.Add(request);
+
+        // A holder of audit.override outranks every stage: the request is settled at submission, recorded as an override with its reason.
+        if (caller.Has(Permissions.AuditOverride))
+        {
+            if (sensitive)
+            {
+                var applied = await SensitiveChanges.ApplyAsync(db, access, request, time.GetUtcNow(), cancellationToken);
+                if (applied.IsFailure)
+                {
+                    return applied.Error;
+                }
+            }
+
+            var settled = request.Override(caller.UserId, DecisionKind.Approve, OverrideReason, request.Revision, time.GetUtcNow());
+            if (settled.IsFailure)
+            {
+                return settled.Error;
+            }
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return request.ToResponse(time.GetUtcNow(), canDecide: false);
     }

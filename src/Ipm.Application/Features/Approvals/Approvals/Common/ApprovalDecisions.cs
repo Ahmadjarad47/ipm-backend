@@ -48,6 +48,13 @@ internal static class ApprovalDecisions
             }
         }
 
-        return request.Decide(caller.UserId, decision, comment, guarded.Deciders.OnBehalfOf(request, caller.UserId), revision, time.GetUtcNow());
+        var decided = request.Decide(caller.UserId, decision, comment, guarded.Deciders.OnBehalfOf(request, caller.UserId), revision, time.GetUtcNow());
+        if (decided.IsSuccess)
+        {
+            // A project approval decides the project's status by itself: approved → active, rejected → cancelled.
+            await ProjectApprovalOutcome.ApplyAsync(db, request, template, caller.UserId, comment, overridden: false, time, cancellationToken);
+        }
+
+        return decided;
     }
 }

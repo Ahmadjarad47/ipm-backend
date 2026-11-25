@@ -87,7 +87,7 @@ public sealed class ApprovalGateTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Scenario_8_R9_a_project_move_that_needs_an_approval_spends_an_approved_closing_request()
+    public async Task Scenario_8_R9_the_final_approval_of_a_project_activates_it_and_spends_the_approval()
     {
         using var admin = await factory.AdminClientAsync();
         using var reem = await factory.SignedInClientAsync("reem", ApiFactory.DemoPassword);
@@ -99,13 +99,40 @@ public sealed class ApprovalGateTests(ApiFactory factory)
         Assert.Equal("activate", body.GetProperty("action").GetString());
         await ApproveAllAsync(admin, id);
 
+        // the project moved by itself: no manual transition is needed
         var active = await ProjectStatusIdAsync(admin, "active");
-        var (_, projectEtag) = await GetProjectAsync(admin, project);
-        var moved = await TransitionAsync(admin, project, active, projectEtag);
-        Assert.Equal(HttpStatusCode.OK, moved.StatusCode);
+        Assert.Equal(active, (await GetProjectAsync(admin, project)).Body.GetProperty("statusId").GetGuid());
         Assert.NotEqual(System.Text.Json.JsonValueKind.Null, (await GetApprovalAsync(admin, id)).Body.GetProperty("consumedAt").ValueKind);
         var history = await ReadAsync(await admin.GetAsync(new Uri($"/api/v1/projects/{project}/status-history", UriKind.Relative)));
         Assert.False(history.GetProperty("items")[0].GetProperty("approvalOverridden").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Scenario_8_R4_a_project_is_approved_to_start_once_then_closed_while_running_and_approved_again_only_to_reopen()
+    {
+        using var admin = await factory.AdminClientAsync();
+        using var reem = await factory.SignedInClientAsync("reem", ApiFactory.DemoPassword);
+        var (project, _) = await NewProjectAsync(admin);
+        var start = await CreateTemplateAsync(admin, "project-approve", ManagerStages(await MyIdAsync(admin)), ["name"], new { projectIds = new[] { project }, priority = 99 });
+        var close = await CreateTemplateAsync(admin, "project-close", ManagerStages(await MyIdAsync(admin)), ["endDate"], new { projectIds = new[] { project }, priority = 98 });
+
+        // not started: only the start approval, and only one while it is unspent
+        Assert.Equal("Approval.ProjectNotRunning", (await ProblemAsync(await TrySubmitAsync(reem, close, "project", project))).Code);
+        var (first, _, _) = await SubmitAsync(reem, start, "project", project);
+        await ApproveAllAsync(admin, first);
+
+        // the approval activated the project by itself: running, no start approval, only closing
+        var (_, projectEtag) = await GetProjectAsync(admin, project);
+        Assert.Equal("Approval.ProjectAlreadyRunning", (await ProblemAsync(await TrySubmitAsync(reem, start, "project", project))).Code);
+        var (closing, _, _) = await SubmitAsync(reem, close, "project", project);
+        await ApproveAllAsync(admin, closing);
+        Assert.Equal("Approval.AlreadyApproved", (await ProblemAsync(await TrySubmitAsync(reem, close, "project", project))).Code);
+        (_, projectEtag) = await GetProjectAsync(admin, project);
+        Assert.Equal(HttpStatusCode.OK, (await TransitionAsync(admin, project, await ProjectStatusIdAsync(admin, "completed"), projectEtag)).StatusCode);
+
+        // closed: no closing again, only a new start approval (reopening)
+        Assert.Equal("Approval.ProjectNotRunning", (await ProblemAsync(await TrySubmitAsync(reem, close, "project", project))).Code);
+        Assert.Equal(HttpStatusCode.Created, (await TrySubmitAsync(reem, start, "project", project)).StatusCode);
     }
 
     [Fact]

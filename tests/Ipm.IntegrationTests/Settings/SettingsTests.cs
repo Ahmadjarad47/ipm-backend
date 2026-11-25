@@ -148,32 +148,39 @@ public sealed class SettingsTests(ApiFactory factory)
     public async Task Scenario_5_R5_self_approval_needs_both_the_setting_and_the_template()
     {
         using var admin = await factory.AdminClientAsync();
+        // The requester is a member without the override permission: an administrator's own request is approved at submission (see ApprovalRequestTests).
+        using var khaled = await factory.SignedInClientAsync("khaled", ApiFactory.DemoPassword);
         var gated = await GatedItemAsync(admin);
-        var adminId = await MyIdAsync(admin);
+        var khaledId = await MyIdAsync(khaled);
+        var (_, projectEtag) = await GetProjectAsync(admin, gated.Project);
+        var manager = await RoleIdAsync(admin, "project_manager");
+        Assert.Equal(HttpStatusCode.OK, (await PutMembersAsync(admin, gated.Project, MembersBody((await MyIdAsync(admin), manager), (khaledId, manager)), projectEtag)).StatusCode);
         var selfTemplate = await admin.PostAsJsonAsync(
             new Uri("/api/v1/approval-templates", UriKind.Relative),
             new
             {
-                name = Unique("ذاتي"), @event = "work-item-approve", stages = ManagerStages(adminId), protectedFields = new[] { "title" }, allowSelfApproval = true,
+                name = Unique("ذاتي"), @event = "work-item-approve", stages = new[] { Stage(1, "ذاتي", "user", khaledId.ToString()) }, protectedFields = new[] { "title" }, allowSelfApproval = true,
                 rule = new { workItemTypeIds = new[] { gated.TypeId }, actions = new[] { "close" }, priority = 50 },
             });
         Assert.Equal(HttpStatusCode.Created, selfTemplate.StatusCode);
         var selfTemplateId = (await ReadAsync(selfTemplate)).GetProperty("id").GetGuid();
 
         // the setting is off: nobody decides their own request
-        var (own, _, _) = await SubmitAsync(admin, selfTemplateId, "work-item", gated.Item);
-        var (body, etag) = await GetApprovalAsync(admin, own);
-        Assert.Equal(HttpStatusCode.Forbidden, (await DecideAsync(admin, own, "approve", null, body.GetProperty("revision").GetInt32(), etag)).StatusCode);
+        var (own, _, _) = await SubmitAsync(khaled, selfTemplateId, "work-item", gated.Item);
+        var (body, etag) = await GetApprovalAsync(khaled, own);
+        Assert.Equal(HttpStatusCode.Forbidden, (await DecideAsync(khaled, own, "approve", null, body.GetProperty("revision").GetInt32(), etag)).StatusCode);
 
         await WithAsync(admin, new { allowSelfApproval = true }, async () =>
         {
-            (body, etag) = await GetApprovalAsync(admin, own);
-            Assert.Equal(HttpStatusCode.OK, (await DecideAsync(admin, own, "approve", null, body.GetProperty("revision").GetInt32(), etag)).StatusCode);
+            (body, etag) = await GetApprovalAsync(khaled, own);
+            Assert.Equal(HttpStatusCode.OK, (await DecideAsync(khaled, own, "approve", null, body.GetProperty("revision").GetInt32(), etag)).StatusCode);
 
             // the setting is on but this template does not allow it
-            var (other, _, _) = await SubmitAsync(admin, gated.Template, "work-item", gated.Item);
-            var (otherBody, otherTag) = await GetApprovalAsync(admin, other);
-            Assert.Equal(HttpStatusCode.Forbidden, (await DecideAsync(admin, other, "approve", null, otherBody.GetProperty("revision").GetInt32(), otherTag)).StatusCode);
+            var strict = await CreateTemplateAsync(
+                admin, "work-item-approve", [Stage(1, "ذاتي", "user", khaledId.ToString())], ["title"], new { workItemTypeIds = new[] { gated.TypeId }, actions = new[] { "close" }, priority = 60 });
+            var (other, _, _) = await SubmitAsync(khaled, strict, "work-item", gated.Item);
+            var (otherBody, otherTag) = await GetApprovalAsync(khaled, other);
+            Assert.Equal(HttpStatusCode.Forbidden, (await DecideAsync(khaled, other, "approve", null, otherBody.GetProperty("revision").GetInt32(), otherTag)).StatusCode);
         });
     }
 

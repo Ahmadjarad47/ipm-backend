@@ -45,6 +45,23 @@ public sealed class ApprovalRequestTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Scenario_3_R4_a_holder_of_the_override_permission_is_approved_at_submission_and_it_is_recorded_as_an_override()
+    {
+        using var admin = await factory.AdminClientAsync();
+        var gated = await GatedItemAsync(admin);
+
+        var (id, _, body) = await SubmitAsync(admin, gated.Template, "work-item", gated.Item);
+
+        Assert.Equal("approved", body.GetProperty("status").GetString());
+        var (stored, _) = await GetApprovalAsync(admin, id);
+        Assert.Equal("approved", stored.GetProperty("status").GetString());
+        var decisions = stored.GetProperty("decisions");
+        Assert.Equal(1, decisions.GetArrayLength());
+        Assert.Equal("approve", decisions[0].GetProperty("decision").GetString()!.ToLowerInvariant());
+        Assert.False(string.IsNullOrWhiteSpace(decisions[0].GetProperty("comment").GetString()));
+    }
+
+    [Fact]
     public async Task Scenario_3_R4_a_stage_without_an_approver_and_an_archived_project_are_refused()
     {
         using var admin = await factory.AdminClientAsync();
@@ -95,6 +112,29 @@ public sealed class ApprovalRequestTests(ApiFactory factory)
 
         var late = await DecideAsync(admin, id, "approve", null, 1, last.Headers.ETag);
         Assert.Equal("Approval.NotPending", (await ProblemAsync(late)).Code);
+    }
+
+    [Fact]
+    public async Task Scenario_5_R6_a_holder_of_audit_override_settles_the_request_at_once_and_skips_the_stages()
+    {
+        using var admin = await factory.AdminClientAsync();
+        using var reem = await factory.SignedInClientAsync("reem", ApiFactory.DemoPassword);
+        var gated = await GatedItemAsync(admin);
+        var (id, etag, _) = await SubmitAsync(reem, gated.Template, "work-item", gated.Item);
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await OverrideAsync(reem, id, "approve", "أنا المقدِّم", 1, etag)).StatusCode); // no audit.override
+        Assert.Equal(HttpStatusCode.BadRequest, (await OverrideAsync(admin, id, "approve", "  ", 1, etag)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await OverrideAsync(admin, id, "return", "ارجع", 1, etag)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await OverrideAsync(admin, id, "approve", "قرار", 7, etag)).StatusCode);
+
+        var done = await OverrideAsync(admin, id, "approve", "أولوية قصوى", 1, etag);
+        Assert.Equal(HttpStatusCode.OK, done.StatusCode);
+        var body = await ReadAsync(done);
+        Assert.Equal("approved", body.GetProperty("status").GetString());
+        Assert.Equal(0, body.GetProperty("currentStage").GetInt32());
+        Assert.Equal(1, body.GetProperty("decisions").GetArrayLength()); // the second stage was skipped
+
+        Assert.Equal("Approval.NotPending", (await ProblemAsync(await OverrideAsync(admin, id, "reject", "مرة أخرى", 1, done.Headers.ETag))).Code);
     }
 
     [Fact]

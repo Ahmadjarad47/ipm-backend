@@ -169,6 +169,32 @@ public sealed class ApprovalRequest : AuditableEntity, IAuditSubject
         return Result.Success();
     }
 
+    /// <summary>
+    /// A holder of <c>audit.override</c> settles the request at once (approve or reject), skipping every remaining stage. The reason is mandatory.
+    /// The handler checked the permission and applied a sensitive change when approving.
+    /// </summary>
+    public Result Override(Guid deciderId, DecisionKind decision, string? comment, int revision, DateTimeOffset now)
+    {
+        var decidable = EnsureDecidable(revision);
+        if (decidable.IsFailure)
+        {
+            return decidable;
+        }
+
+        if (decision == DecisionKind.Return || string.IsNullOrWhiteSpace(comment))
+        {
+            return ApprovalErrors.CommentRequired;
+        }
+
+        Decisions = [.. Decisions, new ApprovalDecision(CurrentStage, deciderId, decision, comment.Trim(), now, revision, null)];
+        RaiseDomainEvent(new Ipm.Domain.Activity.Events.ApprovalDecided(Id, deciderId, decision.ToString()));
+
+        Status = decision == DecisionKind.Approve ? ApprovalStatus.Approved : ApprovalStatus.Rejected;
+        CurrentStage = 0;
+        StageDueAt = null;
+        return Result.Success();
+    }
+
     /// <summary>R7: the requester sends a returned or superseded request again: a new revision from stage 1.</summary>
     public Result Resubmit(IEnumerable<SnapshotEntry> snapshot, IEnumerable<ResolvedApprovers> resolved, DateTimeOffset now)
     {

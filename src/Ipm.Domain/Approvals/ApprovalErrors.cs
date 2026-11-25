@@ -25,6 +25,15 @@ public static class ApprovalErrors
     /// <summary>R4.</summary>
     public static readonly Error ProjectArchived = Error.Failure("Approval.ProjectArchived", "المشروع مؤرشف ولا يقبل طلبات موافقة.");
 
+    /// <summary>R4: an approved request that was not used yet already covers this action.</summary>
+    public static readonly Error AlreadyApproved = Error.Conflict("Approval.AlreadyApproved", "يوجد طلب معتمد لهذا الإجراء لم يُستخدم بعد؛ نفّذ الانتقال به بدل طلب جديد.");
+
+    /// <summary>R4: a project is closed only while it is running.</summary>
+    public static readonly Error ProjectNotRunning = Error.Failure("Approval.ProjectNotRunning", "إغلاق المشروع متاح فقط أثناء تنفيذه.");
+
+    /// <summary>R4: a project is approved once to start, and again only to reopen it after it was closed.</summary>
+    public static readonly Error ProjectAlreadyRunning = Error.Failure("Approval.ProjectAlreadyRunning", "المشروع قيد التنفيذ؛ لا يحتاج اعتماد بدء. المتاح الآن هو طلب الإغلاق.");
+
     /// <summary>R4.</summary>
     public static readonly Error AlreadyPending = Error.Conflict("Approval.AlreadyPending", "يوجد طلب موافقة معلّق لهذا العنصر.");
 
