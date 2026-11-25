@@ -4,6 +4,7 @@
     <Project Path="src/Ipm.Application/Ipm.Application.csproj" />
     <Project Path="src/Ipm.Domain/Ipm.Domain.csproj" />
     <Project Path="src/Ipm.Infrastructure/Ipm.Infrastructure.csproj" />
+    <Project Path="src/Ipm.RealTime/Ipm.RealTime.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Ipm.ArchitectureTests/Ipm.ArchitectureTests.csproj" />

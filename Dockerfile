@@ -7,6 +7,7 @@ COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY src/Ipm.Domain/Ipm.Domain.csproj src/Ipm.Domain/
 COPY src/Ipm.Application/Ipm.Application.csproj src/Ipm.Application/
 COPY src/Ipm.Infrastructure/Ipm.Infrastructure.csproj src/Ipm.Infrastructure/
+COPY src/Ipm.RealTime/Ipm.RealTime.csproj src/Ipm.RealTime/
 COPY src/Ipm.Api/Ipm.Api.csproj src/Ipm.Api/
 RUN dotnet restore src/Ipm.Api/Ipm.Api.csproj
 

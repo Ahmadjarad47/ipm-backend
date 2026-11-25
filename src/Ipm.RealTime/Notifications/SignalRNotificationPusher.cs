@@ -1,9 +1,10 @@
 using Ipm.Application.Abstractions.Realtime;
 using Ipm.Application.Features.Activity.Notifications.Common;
+using Ipm.RealTime.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
-namespace Ipm.Infrastructure.Realtime;
+namespace Ipm.RealTime.Notifications;
 
 /// <summary>
 /// Sends an already-committed notification to the recipient's live connections, if any are open. A transport

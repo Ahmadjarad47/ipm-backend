@@ -90,7 +90,8 @@ Dependencies point inward only — enforced by `ArchitectureTests`.
 | `Ipm.Domain` | entities, value objects, domain errors and events — no framework dependencies |
 | `Ipm.Application` | commands/queries/handlers (one folder per operation, one type per file), validators, abstractions |
 | `Ipm.Infrastructure` | EF Core, Identity, Redis, Git providers, report writer (ClosedXML), notifications |
-| `Ipm.Api` | minimal-API endpoints (no business logic), auth, OpenAPI, SignalR hub, composition root |
+| `Ipm.RealTime` | SignalR hubs, the notification pusher and the hub token rule — SignalR lives only here; depends on Application only |
+| `Ipm.Api` | minimal-API endpoints (no business logic), auth, OpenAPI, composition root (wires Infrastructure and RealTime) |
 
 Cross-cutting conventions:
 

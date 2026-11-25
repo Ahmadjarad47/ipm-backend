@@ -6,7 +6,7 @@ using Ipm.Api.Endpoints.Identity.Auth.Common;
 using Ipm.Api.Infrastructure;
 using Ipm.Application;
 using Ipm.Infrastructure;
-using Ipm.Infrastructure.Realtime;
+using Ipm.RealTime;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
@@ -18,7 +18,8 @@ builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(conte
 
 builder.Services
     .AddApplication()
-    .AddInfrastructure(builder.Configuration);
+    .AddInfrastructure(builder.Configuration)
+    .AddRealTime();
 
 // Enums travel as kebab-case text, the same as the front end string unions and the database (on-hold, in-progress).
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -131,9 +132,8 @@ if (app.Configuration.GetValue<bool>("OpenApi:Enabled"))
 
 app.MapHealthChecks("/health");
 
-// Real-time notifications (spec 08 R11). Mounted under /api/v1 so it rides the existing nginx/dev-proxy
-// rule for that prefix — only the WebSocket upgrade headers needed adding there, no new proxy route.
-app.MapHub<NotificationsHub>("/api/v1/hubs/notifications").RequireAuthorization();
+// Real-time hubs (spec 08 R11), under /api/v1 so they ride the existing nginx/dev-proxy rule for that prefix.
+app.MapRealTime();
 
 // Everything under /api/v1 needs a signed-in user unless an endpoint says AllowAnonymous.
 var api = app.MapGroup("/api/v1").RequireAuthorization();

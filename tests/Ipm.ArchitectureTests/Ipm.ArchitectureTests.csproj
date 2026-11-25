@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Ipm.Domain\Ipm.Domain.csproj" />
     <ProjectReference Include="..\..\src\Ipm.Application\Ipm.Application.csproj" />
     <ProjectReference Include="..\..\src\Ipm.Infrastructure\Ipm.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Ipm.RealTime\Ipm.RealTime.csproj" />
     <ProjectReference Include="..\..\src\Ipm.Api\Ipm.Api.csproj" />
   </ItemGroup>
 </Project>

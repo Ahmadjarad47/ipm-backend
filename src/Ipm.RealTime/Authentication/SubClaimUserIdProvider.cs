@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.JsonWebTokens;
 
-namespace Ipm.Infrastructure.Realtime;
+namespace Ipm.RealTime.Authentication;
 
 /// <summary>
 /// Maps a hub connection to the user id SignalR's <c>Clients.User(...)</c> uses for routing.

@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Ipm.Application\Ipm.Application.csproj" />
     <ProjectReference Include="..\Ipm.Infrastructure\Ipm.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ipm.RealTime\Ipm.RealTime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

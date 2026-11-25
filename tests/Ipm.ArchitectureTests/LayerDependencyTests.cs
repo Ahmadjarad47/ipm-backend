@@ -5,7 +5,7 @@ namespace Ipm.ArchitectureTests;
 
 /// <summary>
 /// Guards the Clean Architecture dependency rule: dependencies only point inward
-/// (Api -> Infrastructure -> Application -> Domain).
+/// (Api -> Infrastructure / RealTime -> Application -> Domain).
 /// </summary>
 public sealed class LayerDependencyTests
 {
@@ -13,6 +13,9 @@ public sealed class LayerDependencyTests
     private static readonly Assembly Application = typeof(Application.AssemblyReference).Assembly;
     private static readonly Assembly Infrastructure = typeof(Infrastructure.AssemblyReference).Assembly;
 
+    private static readonly Assembly RealTime = typeof(RealTime.AssemblyReference).Assembly;
+
+    private const string RealTimeNs = "Ipm.RealTime";
     private const string ApplicationNs = "Ipm.Application";
     private const string InfrastructureNs = "Ipm.Infrastructure";
     private const string ApiNs = "Ipm.Api";
@@ -60,6 +63,45 @@ public sealed class LayerDependencyTests
             .GetResult();
 
         Assert.True(result.IsSuccessful, Failures(result));
+    }
+
+    [Fact]
+    public void RealTime_does_not_depend_on_Infrastructure_or_Api()
+    {
+        var result = Types.InAssembly(RealTime)
+            .ShouldNot()
+            .HaveDependencyOnAny([InfrastructureNs, ApiNs])
+            .GetResult();
+
+        Assert.True(result.IsSuccessful, Failures(result));
+    }
+
+    [Fact]
+    public void Inner_layers_do_not_depend_on_RealTime()
+    {
+        foreach (var assembly in new[] { Domain, Application, Infrastructure })
+        {
+            var result = Types.InAssembly(assembly)
+                .ShouldNot()
+                .HaveDependencyOn(RealTimeNs)
+                .GetResult();
+
+            Assert.True(result.IsSuccessful, $"{assembly.GetName().Name}: {Failures(result)}");
+        }
+    }
+
+    [Fact]
+    public void SignalR_lives_only_in_RealTime()
+    {
+        foreach (var assembly in new[] { Domain, Application, Infrastructure })
+        {
+            var result = Types.InAssembly(assembly)
+                .ShouldNot()
+                .HaveDependencyOn("Microsoft.AspNetCore.SignalR")
+                .GetResult();
+
+            Assert.True(result.IsSuccessful, $"{assembly.GetName().Name}: {Failures(result)}");
+        }
     }
 
     [Fact]
