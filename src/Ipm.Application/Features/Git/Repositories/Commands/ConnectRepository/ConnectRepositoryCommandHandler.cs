@@ -29,16 +29,37 @@ internal sealed class ConnectRepositoryCommandHandler(
         }
 
         var name = command.Name.Trim();
-        if (await db.GitRepositories.AnyAsync(r => r.ProjectId == command.ProjectId && r.IsConnected && r.Name == name, cancellationToken))
+        var existing = await db.GitRepositories
+            .Where(r => r.ProjectId == command.ProjectId && r.Name == name)
+            .OrderByDescending(r => r.IsConnected)
+            .ThenByDescending(r => r.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (existing is { IsConnected: true })
         {
             return GitErrors.AlreadyConnected;
         }
 
         var generated = command.WebhookSecret is null ? RepositorySecrets.Generate() : null;
         var secret = command.WebhookSecret ?? generated!;
-        var repository = GitRepository.Connect(
-            command.ProjectId, command.Provider, name, command.Url, command.DefaultBranch, protector.Protect(command.AccessToken), protector.Protect(secret));
-        db.GitRepositories.Add(repository);
+        GitRepository repository;
+        if (existing is not null)
+        {
+            // R2: the same repository connected again picks up its disconnected record and its history.
+            var reconnected = existing.Reconnect(command.Provider, command.Url, command.DefaultBranch, protector.Protect(command.AccessToken), protector.Protect(secret));
+            if (reconnected.IsFailure)
+            {
+                return reconnected.Error;
+            }
+
+            repository = existing;
+        }
+        else
+        {
+            repository = GitRepository.Connect(
+                command.ProjectId, command.Provider, name, command.Url, command.DefaultBranch, protector.Protect(command.AccessToken), protector.Protect(secret));
+            db.GitRepositories.Add(repository);
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return repository.ToResponse(generated);
     }

@@ -53,6 +53,9 @@ internal static class ApprovalApi
     public static Task<HttpResponseMessage> DecideAsync(HttpClient client, Guid id, string decision, string? comment, int revision, EntityTagHeaderValue? etag) =>
         SendAsync(client, HttpMethod.Post, $"/api/v1/approvals/{id}/decide", new { decision, comment, revision }, etag);
 
+    public static Task<HttpResponseMessage> OverrideAsync(HttpClient client, Guid id, string decision, string? comment, int revision, EntityTagHeaderValue? etag) =>
+        SendAsync(client, HttpMethod.Post, $"/api/v1/approvals/{id}/override", new { decision, comment, revision }, etag);
+
     public static Task<(JsonElement Body, EntityTagHeaderValue ETag)> GetApprovalAsync(HttpClient client, Guid id) => GetAsync(client, $"/api/v1/approvals/{id}");
 
     /// <summary>Approves every stage with the administrator (who decides each one), returning the last response.</summary>

@@ -61,12 +61,34 @@ public sealed partial class GitRepository : AuditableEntity, IAuditSubject
 
     private GitRepository(Guid id) : base(id) { }
 
-    /// <summary>R2: keeps the record, drops the connection.</summary>
+    /// <summary>R2: keeps the record, drops the connection. A disconnected repository is not synced, so its last sync error no longer applies.</summary>
     public void Disconnect()
     {
         IsConnected = false;
         AccessTokenCipher = null;
         WebhookSecretCipher = null;
+        LastSyncError = null;
+    }
+
+    /// <summary>
+    /// R2: connecting a repository again reuses its disconnected record, so its events and deliveries stay with it instead of being
+    /// left on a second, dead record. The secrets arrive already encrypted.
+    /// </summary>
+    public Result Reconnect(GitProvider provider, string url, string defaultBranch, string accessTokenCipher, string webhookSecretCipher)
+    {
+        if (IsConnected)
+        {
+            return GitErrors.AlreadyConnected;
+        }
+
+        Provider = provider;
+        Url = url.Trim();
+        DefaultBranch = defaultBranch.Trim();
+        IsConnected = true;
+        AccessTokenCipher = accessTokenCipher;
+        WebhookSecretCipher = webhookSecretCipher;
+        LastSyncError = null;
+        return Result.Success();
     }
 
     /// <summary>R3.</summary>

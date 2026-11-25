@@ -10,7 +10,7 @@ using Ipm.Domain.Projects;
 
 namespace Ipm.Application.Features.Approvals.ApprovalTemplates.Queries.MatchApprovalTemplate;
 
-internal sealed class MatchApprovalTemplateQueryHandler(IApplicationDbContext db, IUserContext currentUser, IAccessService access, ISecurityEventLog securityLog)
+internal sealed class MatchApprovalTemplateQueryHandler(IApplicationDbContext db, IUserContext currentUser, IAccessService access, ISecurityEventLog securityLog, TimeProvider time)
     : IQueryHandler<MatchApprovalTemplateQuery, ApprovalTemplateResponse?>
 {
     public async ValueTask<Result<ApprovalTemplateResponse?>> Handle(MatchApprovalTemplateQuery query, CancellationToken cancellationToken)
@@ -31,6 +31,11 @@ internal sealed class MatchApprovalTemplateQueryHandler(IApplicationDbContext db
 
         var subject = (await ApprovalSubjects.LoadAsync(db, subjectType, query.SubjectId, cancellationToken))!;
         var template = await TemplateMatcher.BestAsync(db, subject, action, cancellationToken);
+        if (template is not null && await ApprovalEligibility.CheckAsync(db, template, subject, action, time.GetUtcNow(), cancellationToken) is not null)
+        {
+            return (ApprovalTemplateResponse?)null; // nothing to offer now: the project is not in a state that needs it, or an approved request is still unspent
+        }
+
         return template?.ToResponse();
     }
 }
