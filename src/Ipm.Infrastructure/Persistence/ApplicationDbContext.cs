@@ -64,6 +64,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<TelegramLink> TelegramLinks => Set<TelegramLink>();
+
+    public DbSet<TelegramMessage> TelegramOutbox => Set<TelegramMessage>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();

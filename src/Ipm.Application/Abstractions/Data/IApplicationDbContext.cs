@@ -66,4 +66,9 @@ public interface IApplicationDbContext
     DbSet<WebhookDelivery> WebhookDeliveries { get; }
 
     DbSet<Notification> Notifications { get; }
+
+    // Part 11: Telegram notifications.
+    DbSet<TelegramLink> TelegramLinks { get; }
+
+    DbSet<TelegramMessage> TelegramOutbox { get; }
 }
