@@ -11,7 +11,7 @@ namespace Ipm.IntegrationTests.Reports;
 [Collection(ApiCollection.Name)]
 public sealed class WorkReportTests(ApiFactory factory)
 {
-    private const string ItemsSheet = "عناصر العمل";
+    private const string ItemsSheet = "الأعمال";
     private const string SummarySheet = "الملخص";
 
     private static string Around => $"from={DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)):yyyy-MM-dd}&to={DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)):yyyy-MM-dd}";

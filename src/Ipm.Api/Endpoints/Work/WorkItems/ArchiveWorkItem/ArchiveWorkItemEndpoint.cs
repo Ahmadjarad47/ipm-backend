@@ -17,6 +17,6 @@ internal sealed class ArchiveWorkItemEndpoint : IEndpoint
                 return (await sender.Send(new ArchiveWorkItemCommand(id, version), ct)).ToHttpResult();
             })
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("أرشفة عنصر عمل (If-Match)")
-            .WithDescription("بصلاحية tasks.delete داخل المشروع. عناصر العمل ما بتنحذف، بتتأرشف. العنصر اللي له أبناء نشطين ما بينأرشف، انقلهم أولاً.");
+            .WithSummary("أرشفة عمل (If-Match)")
+            .WithDescription("بصلاحية tasks.delete داخل المشروع. الأعمال ما بتنحذف، بتتأرشف. العمل اللي له أبناء نشطين ما بينأرشف، انقلهم أولاً.");
 }

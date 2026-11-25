@@ -71,13 +71,13 @@ public static class ProjectErrors
 
     /// <summary>R17 (part 04), enforced from part 05: narrowing the allowed types under existing items of a removed type.</summary>
     public static Error TypesInUse(int items) => Error.Failure(
-        "Project.TypesInUse", $"لا يمكن حذف نوع مسموح به: يوجد {items} عنصر عمل من أنواع محذوفة في هذا المشروع.");
+        "Project.TypesInUse", $"لا يمكن حذف نوع مسموح به: يوجد {items} عمل من أنواع محذوفة في هذا المشروع.");
 
     /// <summary>R17 (part 04), enforced from part 05: an override whose workflow lacks the status of existing items.</summary>
     public static Error WorkflowOverrideConflicts(int items) => Error.Failure(
-        "Project.WorkflowOverrideConflicts", $"لا يمكن تطبيق استثناء سير العمل: يوجد {items} عنصر بحالة غير موجودة في سير العمل الجديد.");
+        "Project.WorkflowOverrideConflicts", $"لا يمكن تطبيق استثناء سير العمل: يوجد {items} عمل بحالة غير موجودة في سير العمل الجديد.");
 
     /// <summary>R13.</summary>
     public static readonly Error WorkflowOverrideInvalid = Error.Failure(
-        "Project.WorkflowOverrideInvalid", "استثناء سير العمل غير صالح: النوع أو سير العمل غير موجود، أو سير العمل ليس لعناصر العمل.");
+        "Project.WorkflowOverrideInvalid", "استثناء سير العمل غير صالح: النوع أو سير العمل غير موجود، أو سير العمل ليس للأعمال.");
 }

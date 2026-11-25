@@ -17,6 +17,6 @@ internal sealed class CloseWorkItemEndpoint : IEndpoint
                 return (await sender.Send(new CloseWorkItemCommand(id, r?.ToStatusId, r?.Comment, version), ct)).ToETagResult(http.Response, i => i.Version);
             })
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("إغلاق عنصر (If-Match)")
+            .WithSummary("إغلاق عمل (If-Match)")
             .WithDescription("بيروح لحالة من تصنيف مكتمل معرّفة من الحالة الحالية. إذا فيه وحدة بس بتنختار لحالها، وإذا أكتر لازم toStatusId (400 وإلا).");
 }

@@ -9,13 +9,13 @@ public static class ApprovalErrors
 
     public static readonly Error TemplateNotFound = Error.NotFound("ApprovalTemplate.NotFound", "قالب الموافقة غير موجود.");
 
-    public static readonly Error SubjectNotFound = Error.NotFound("Approval.SubjectNotFound", "المشروع أو عنصر العمل غير موجود أو لا تملك صلاحية الاطلاع عليه.");
+    public static readonly Error SubjectNotFound = Error.NotFound("Approval.SubjectNotFound", "المشروع أو العمل غير موجود أو لا تملك صلاحية الاطلاع عليه.");
 
     /// <summary>R4.</summary>
     public static readonly Error TemplateInactive = Error.Failure("Approval.TemplateInactive", "قالب الموافقة معطّل.");
 
     /// <summary>R4.</summary>
-    public static readonly Error TemplateNotApplicable = Error.Failure("Approval.TemplateNotApplicable", "قالب الموافقة لا ينطبق على هذا العنصر وفق قواعده.");
+    public static readonly Error TemplateNotApplicable = Error.Failure("Approval.TemplateNotApplicable", "قالب الموافقة لا ينطبق على هذا العمل وفق قواعده.");
 
     /// <summary>R4.</summary>
     public static readonly Error ActionMismatch = Error.Failure("Approval.ActionMismatch", "الإجراء لا يتوافق مع قالب الموافقة.");
@@ -35,7 +35,7 @@ public static class ApprovalErrors
     public static readonly Error ProjectAlreadyRunning = Error.Failure("Approval.ProjectAlreadyRunning", "المشروع قيد التنفيذ؛ لا يحتاج اعتماد بدء. المتاح الآن هو طلب الإغلاق.");
 
     /// <summary>R4.</summary>
-    public static readonly Error AlreadyPending = Error.Conflict("Approval.AlreadyPending", "يوجد طلب موافقة معلّق لهذا العنصر.");
+    public static readonly Error AlreadyPending = Error.Conflict("Approval.AlreadyPending", "يوجد طلب موافقة معلّق لهذا العمل.");
 
     /// <summary>R4.</summary>
     public static Error StageUnresolvable(int order, string name) => Error.Failure(
@@ -92,7 +92,7 @@ public static class ApprovalErrors
     public static readonly Error DelegatorInvalid = Error.Failure("Delegation.DelegatorInvalid", "المفوِّض غير موجود أو غير نشط.");
 
     /// <summary>06b R1: the subject (a work item) is archived.</summary>
-    public static readonly Error SubjectArchived = Error.Failure("Approval.SubjectArchived", "عنصر العمل مؤرشف ولا يقبل طلبات تعديل.");
+    public static readonly Error SubjectArchived = Error.Failure("Approval.SubjectArchived", "العمل مؤرشف ولا يقبل طلبات تعديل.");
 
     /// <summary>06b R1: a sensitive change names no values.</summary>
     public static readonly Error ProposedChangesRequired = Error.Failure("Approval.ProposedChangesRequired", "حدّد القيم المقترحة للحقول المحمية.");

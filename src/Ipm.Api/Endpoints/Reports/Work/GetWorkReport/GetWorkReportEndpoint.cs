@@ -33,5 +33,5 @@ internal sealed class GetWorkReportEndpoint : IEndpoint
             })
             .WithTags(ReportsTags.Reports)
             .WithSummary("تقرير العمل (xlsx)")
-            .WithDescription("ملف Excel بورقتين: ملخص لكل مشروع وعناصر العمل التي أُنشئت أو تغيّرت حالتها أو تحدّثت خلال الفترة. from وto يوم بتوقيت المؤسسة (الفترة حتى 366 يوماً). projectIds قائمة بفواصل (فارغة: كل مشاريعك المسموحة)، وassigneeId يحصر التقرير بعناصر شخص واحد. بصلاحيتي projects.view وreports.export على كل مشروع؛ مشروع غير مسموح لا يظهر ولا يُكشف.");
+            .WithDescription("ملف Excel بورقتين: ملخص لكل مشروع والأعمال التي أُنشئت أو تغيّرت حالتها أو تحدّثت خلال الفترة. from وto يوم بتوقيت المؤسسة (الفترة حتى 366 يوماً). projectIds قائمة بفواصل (فارغة: كل مشاريعك المسموحة)، وassigneeId يحصر التقرير بأعمال شخص واحد. بصلاحيتي projects.view وreports.export على كل مشروع؛ مشروع غير مسموح لا يظهر ولا يُكشف.");
 }

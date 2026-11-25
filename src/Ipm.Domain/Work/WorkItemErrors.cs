@@ -5,14 +5,14 @@ namespace Ipm.Domain.Work;
 public static class WorkItemErrors
 {
     /// <summary>Also the answer for an item of a project the caller cannot see, so its existence is not revealed.</summary>
-    public static readonly Error NotFound = Error.NotFound("WorkItem.NotFound", "عنصر العمل غير موجود أو لا تملك صلاحية الاطلاع عليه.");
+    public static readonly Error NotFound = Error.NotFound("WorkItem.NotFound", "العمل غير موجود أو لا تملك صلاحية الاطلاع عليه.");
 
     /// <summary>R1, R2.</summary>
-    public static readonly Error ProjectArchived = Error.Failure("WorkItem.ProjectArchived", "المشروع مؤرشف ولا يمكن تعديل عناصره.");
+    public static readonly Error ProjectArchived = Error.Failure("WorkItem.ProjectArchived", "المشروع مؤرشف ولا يمكن تعديل أعماله.");
 
     /// <summary>R1.</summary>
     public static readonly Error TypeNotAllowed = Error.Failure(
-        "WorkItem.TypeNotAllowed", "نوع العنصر غير موجود أو غير مفعّل أو غير مسموح به في هذا المشروع.");
+        "WorkItem.TypeNotAllowed", "نوع العمل غير موجود أو غير مفعّل أو غير مسموح به في هذا المشروع.");
 
     /// <summary>R1.</summary>
     public static readonly Error InvalidDates = Error.Validation("WorkItem.InvalidDates", "تاريخ الاستحقاق يسبق تاريخ البداية.");
@@ -21,15 +21,15 @@ public static class WorkItemErrors
     public static readonly Error WorkflowMissing = Error.Failure("WorkItem.WorkflowMissing", "لا يوجد سير عمل صالح لهذا النوع في المشروع.");
 
     /// <summary>R2, R3.</summary>
-    public static readonly Error Archived = Error.Failure("WorkItem.Archived", "عنصر العمل مؤرشف ولا يمكن تعديله.");
+    public static readonly Error Archived = Error.Failure("WorkItem.Archived", "العمل مؤرشف ولا يمكن تعديله.");
 
     /// <summary>R2.</summary>
     public static readonly Error StatusChangeNotAllowed = Error.Failure(
-        "WorkItem.StatusChangeNotAllowed", "تُغيَّر حالة العنصر عبر الانتقالات فقط.");
+        "WorkItem.StatusChangeNotAllowed", "تُغيَّر حالة العمل عبر الانتقالات فقط.");
 
     /// <summary>R2.</summary>
     public static readonly Error TypeChangeNotAllowed = Error.Failure(
-        "WorkItem.TypeChangeNotAllowed", "يُغيَّر نوع العنصر عبر تغيير النوع فقط.");
+        "WorkItem.TypeChangeNotAllowed", "يُغيَّر نوع العمل عبر تغيير النوع فقط.");
 
     /// <summary>R2.</summary>
     public static readonly Error ParentChangeNotAllowed = Error.Failure(
@@ -37,7 +37,7 @@ public static class WorkItemErrors
 
     /// <summary>R3.</summary>
     public static readonly Error HasActiveChildren = Error.Failure(
-        "WorkItem.HasActiveChildren", "للعنصر أبناء نشطون. انقلهم أو أرشفهم أولاً.");
+        "WorkItem.HasActiveChildren", "للعمل أبناء نشطون. انقلهم أو أرشفهم أولاً.");
 
     /// <summary>R4.</summary>
     public static readonly Error AssigneesInvalid = Error.Validation(
@@ -52,35 +52,35 @@ public static class WorkItemErrors
 
     /// <summary>R6.</summary>
     public static readonly Error ParentTypeNotAllowed = Error.Failure(
-        "WorkItem.ParentTypeNotAllowed", "نوع هذا العنصر غير مسموح كابن لنوع الأب.");
+        "WorkItem.ParentTypeNotAllowed", "نوع هذا العمل غير مسموح كابن لنوع الأب.");
 
     /// <summary>R6.</summary>
-    public static readonly Error ParentCycle = Error.Failure("WorkItem.ParentCycle", "الأب المطلوب يسبب حلقة: العنصر نفسه أو أحد أحفاده.");
+    public static readonly Error ParentCycle = Error.Failure("WorkItem.ParentCycle", "الأب المطلوب يسبب حلقة: العمل نفسه أو أحد أحفاده.");
 
     /// <summary>R6.</summary>
     public static readonly Error ParentArchived = Error.Failure("WorkItem.ParentArchived", "الأب المطلوب مؤرشف.");
 
     /// <summary>R6.</summary>
-    public static readonly Error ParentNotFound = Error.Validation("WorkItem.ParentNotFound", "عنصر الأب غير موجود.");
+    public static readonly Error ParentNotFound = Error.Validation("WorkItem.ParentNotFound", "العمل الأب غير موجود.");
 
     /// <summary>R7.</summary>
     public static Error TransitionNotAllowed(string from, string to) => Error.Failure(
-        "WorkItem.TransitionNotAllowed", $"الانتقال من «{from}» إلى «{to}» غير معرّف في سير عمل هذا العنصر.");
+        "WorkItem.TransitionNotAllowed", $"الانتقال من «{from}» إلى «{to}» غير معرّف في سير عمل هذا العمل.");
 
     /// <summary>R7.</summary>
     public static readonly Error TargetStatusInactive = Error.Failure("WorkItem.TargetStatusInactive", "الحالة المطلوبة معطّلة.");
 
     /// <summary>R7.</summary>
     public static readonly Error AssigneeRequired = Error.Failure(
-        "WorkItem.AssigneeRequired", "هذا الانتقال يتطلب أن يكون للعنصر مسؤول.");
+        "WorkItem.AssigneeRequired", "هذا الانتقال يتطلب أن يكون للعمل مسؤول.");
 
     /// <summary>R7.</summary>
     public static Error BlockedBy(IEnumerable<string> refs) => Error.Failure(
-        "WorkItem.BlockedByDependencies", $"لا يمكن تنفيذ الانتقال: العنصر محجوب بواسطة {string.Join("، ", refs)}.");
+        "WorkItem.BlockedByDependencies", $"لا يمكن تنفيذ الانتقال: العمل محجوب بواسطة {string.Join("، ", refs)}.");
 
     /// <summary>R7.</summary>
     public static readonly Error BlockedByDependencies = Error.Failure(
-        "WorkItem.BlockedByDependencies", "العنصر محجوب باعتماديات مفتوحة.");
+        "WorkItem.BlockedByDependencies", "العمل محجوب باعتماديات مفتوحة.");
 
     /// <summary>R8.</summary>
     public static readonly Error ApprovalRequired = Error.Failure(
@@ -88,7 +88,7 @@ public static class WorkItemErrors
 
     /// <summary>R9.</summary>
     public static readonly Error CloseTargetRequired = Error.Validation(
-        "WorkItem.CloseTargetRequired", "للعنصر أكثر من حالة إغلاق ممكنة. حدّد الحالة المطلوبة.");
+        "WorkItem.CloseTargetRequired", "للعمل أكثر من حالة إغلاق ممكنة. حدّد الحالة المطلوبة.");
 
     /// <summary>R9.</summary>
     public static readonly Error CloseTargetInvalid = Error.Failure(
@@ -99,7 +99,7 @@ public static class WorkItemErrors
         "WorkItem.ReopenReasonRequired", "سبب إعادة الفتح مطلوب.");
 
     /// <summary>R9.</summary>
-    public static readonly Error NotClosed = Error.Failure("WorkItem.NotClosed", "العنصر غير مغلق، فلا يمكن إعادة فتحه.");
+    public static readonly Error NotClosed = Error.Failure("WorkItem.NotClosed", "العمل غير مغلق، فلا يمكن إعادة فتحه.");
 
     /// <summary>R9.</summary>
     public static readonly Error ReopenTargetInvalid = Error.Failure(
@@ -107,13 +107,13 @@ public static class WorkItemErrors
 
     /// <summary>R10.</summary>
     public static readonly Error TypeChangeConflictsError = Error.Failure(
-        "WorkItem.TypeChangeConflicts", "تغيير النوع يتعارض مع بيانات العنصر. راجع قائمة التعارضات.");
+        "WorkItem.TypeChangeConflicts", "تغيير النوع يتعارض مع بيانات العمل. راجع قائمة التعارضات.");
 
     /// <summary>R12.</summary>
-    public static readonly Error BulkEmpty = Error.Validation("Bulk.Empty", "حدّد عنصراً واحداً على الأقل.");
+    public static readonly Error BulkEmpty = Error.Validation("Bulk.Empty", "حدّد عملاً واحداً على الأقل.");
 
     /// <summary>R12.</summary>
-    public static readonly Error BulkTooMany = Error.Validation("Bulk.TooMany", "الحد الأقصى 100 عنصر في العملية الواحدة.");
+    public static readonly Error BulkTooMany = Error.Validation("Bulk.TooMany", "الحد الأقصى 100 عمل في العملية الواحدة.");
 
     /// <summary>R12.</summary>
     public static readonly Error BulkInvalid = Error.Validation("Bulk.Invalid", "إجراء التعديل الجماعي غير صالح.");

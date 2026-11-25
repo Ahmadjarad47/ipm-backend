@@ -29,7 +29,7 @@ public static class ApprovalTemplateDefinition
         {
             if (ApprovalSubjectFields.SubjectOf(approvalEvent, protectedFields) is null)
             {
-                problems.Add(("protectedFields", "التعديل الحساس يتطلب حقولاً محمية صالحة لنوع واحد (مشروع أو عنصر عمل)."));
+                problems.Add(("protectedFields", "التعديل الحساس يتطلب حقولاً محمية صالحة لنوع واحد (مشروع أو عمل)."));
             }
         }
         else

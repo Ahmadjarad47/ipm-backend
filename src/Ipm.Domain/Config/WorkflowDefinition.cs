@@ -71,12 +71,12 @@ public static class WorkflowDefinition
         // A project has no assignee and no dependencies, so these two conditions mean nothing there.
         if (scope == StatusScope.Project && t.RequiresAssignee)
         {
-            problems.Add(($"{at}.requiresAssignee", "شرط المسؤول يخص عناصر العمل فقط."));
+            problems.Add(($"{at}.requiresAssignee", "شرط المسؤول يخص الأعمال فقط."));
         }
 
         if (scope == StatusScope.Project && t.BlockedByOpenDependencies)
         {
-            problems.Add(($"{at}.blockedByOpenDependencies", "شرط الاعتماديات المفتوحة يخص عناصر العمل فقط."));
+            problems.Add(($"{at}.blockedByOpenDependencies", "شرط الاعتماديات المفتوحة يخص الأعمال فقط."));
         }
     }
 }

@@ -35,8 +35,8 @@ internal sealed class ActivityNotificationHandler(IServiceScopeFactory scopes) :
     public Task Handle(WorkItemAssigneesChanged e, CancellationToken ct) => RunAsync(async (db, emit) =>
     {
         var body = $"{e.Ref} {e.Title}";
-        await emit.EmitAsync(NotificationKinds.WorkItemAssigned, e.Added, "تم تكليفك بعنصر عمل", body, ItemLink(e.WorkItemId), e.ProjectId, "work-item", e.WorkItemId, ct);
-        await emit.EmitAsync(NotificationKinds.WorkItemUnassigned, e.Removed, "أُزيل تكليفك من عنصر عمل", body, ItemLink(e.WorkItemId), e.ProjectId, "work-item", e.WorkItemId, ct);
+        await emit.EmitAsync(NotificationKinds.WorkItemAssigned, e.Added, "تم تكليفك بعمل", body, ItemLink(e.WorkItemId), e.ProjectId, "work-item", e.WorkItemId, ct);
+        await emit.EmitAsync(NotificationKinds.WorkItemUnassigned, e.Removed, "أُزيل تكليفك من عمل", body, ItemLink(e.WorkItemId), e.ProjectId, "work-item", e.WorkItemId, ct);
     }, ct);
 
     public Task Handle(WorkItemStatusChanged e, CancellationToken ct) => RunAsync(async (db, emit) =>
@@ -44,7 +44,7 @@ internal sealed class ActivityNotificationHandler(IServiceScopeFactory scopes) :
         var assignees = await db.WorkItems.AsNoTracking().Where(i => i.Id == e.WorkItemId).Select(i => i.AssigneeIds).SingleOrDefaultAsync(ct);
         var names = await StatusNamesAsync(db, e.FromStatusId, e.ToStatusId, ct);
         await emit.EmitAsync(
-            NotificationKinds.WorkItemStatusChanged, assignees ?? [], "تغيّرت حالة عنصر عمل", $"{e.Ref}: {names[e.FromStatusId]} ← {names[e.ToStatusId]}",
+            NotificationKinds.WorkItemStatusChanged, assignees ?? [], "تغيّرت حالة عمل", $"{e.Ref}: {names[e.FromStatusId]} ← {names[e.ToStatusId]}",
             ItemLink(e.WorkItemId), e.ProjectId, "work-item", e.WorkItemId, ct);
     }, ct);
 

@@ -11,5 +11,5 @@ internal sealed class SearchEndpoint : IEndpoint
                 (await sender.Send(new SearchQuery(q, limit), ct)).ToHttpResult())
             .WithTags(SearchTags.Search)
             .WithSummary("البحث الشامل")
-            .WithDescription("مشاريع وعناصر عمل وطلبات موافقة (ومستخدمون لمن يملك roles.manage) بتطابق النص، مفلترة بصلاحياتك. أقل من حرفين ← قائمة فاضية. الرمز الدقيق (ERP-104) أولاً. limit افتراضي 12 وأقصى 30. kind: project أو work-item أو approval أو user.");
+            .WithDescription("مشاريع وأعمال وطلبات موافقة (ومستخدمون لمن يملك roles.manage) بتطابق النص، مفلترة بصلاحياتك. أقل من حرفين ← قائمة فاضية. الرمز الدقيق (ERP-104) أولاً. limit افتراضي 12 وأقصى 30. kind: project أو work-item أو approval أو user.");
 }

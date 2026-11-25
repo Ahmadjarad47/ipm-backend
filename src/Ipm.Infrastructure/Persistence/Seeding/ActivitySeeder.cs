@@ -15,9 +15,9 @@ public static class ActivitySeeder
 
     private static readonly (string Kind, string Title, string Body, string Link, bool Read)[] Samples =
     [
-        (NotificationKinds.WorkItemAssigned, "تم تكليفك بعنصر عمل", "ERP-104 تحسين شاشة الدفعات", "/projects", false),
-        (NotificationKinds.WorkItemStatusChanged, "تغيّرت حالة عنصر عمل", "ERP-105: قيد التنفيذ ← قيد المراجعة", "/projects", false),
-        (NotificationKinds.ApprovalRequested, "أُسند إليك طلب موافقة", "إغلاق عنصر ERP-111", "/approvals", false),
+        (NotificationKinds.WorkItemAssigned, "تم تكليفك بعمل", "ERP-104 تحسين شاشة الدفعات", "/projects", false),
+        (NotificationKinds.WorkItemStatusChanged, "تغيّرت حالة عمل", "ERP-105: قيد التنفيذ ← قيد المراجعة", "/projects", false),
+        (NotificationKinds.ApprovalRequested, "أُسند إليك طلب موافقة", "إغلاق عمل ERP-111", "/approvals", false),
         (NotificationKinds.CommentMentioned, "تمت الإشارة إليك في تعليق", "هل يمكن مراجعة التصميم قبل الاجتماع؟", "/projects", true),
         (NotificationKinds.ProjectMemberAdded, "أُضفت إلى مشروع", "نظام تخطيط الموارد", "/projects", true),
     ];

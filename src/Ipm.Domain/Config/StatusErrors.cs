@@ -31,5 +31,5 @@ public static class StatusErrors
 
     /// <summary>R15 (part 03), enforced from part 05: a work item status that work items are in cannot be deactivated.</summary>
     public static Error InUseByWorkItems(int items) => Error.Failure(
-        "Status.InUse", $"لا يمكن تعطيل الحالة: يوجد {items} عنصر عمل بهذه الحالة.");
+        "Status.InUse", $"لا يمكن تعطيل الحالة: يوجد {items} عمل بهذه الحالة.");
 }

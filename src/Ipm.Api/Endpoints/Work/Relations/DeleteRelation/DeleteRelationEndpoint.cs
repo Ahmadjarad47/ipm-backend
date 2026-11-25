@@ -11,5 +11,5 @@ internal sealed class DeleteRelationEndpoint : IEndpoint
                 (await sender.Send(new DeleteRelationCommand(id), ct)).ToHttpResult())
             .WithTags(WorkTags.Relations)
             .WithSummary("حذف رابط")
-            .WithDescription("بصلاحية workitem.relations.delete بمشروع العنصرين، والمشروع غير مؤرشف. سجل التدقيق بيحفظ أثره.");
+            .WithDescription("بصلاحية workitem.relations.delete بمشروع العملين، والمشروع غير مؤرشف. سجل التدقيق بيحفظ أثره.");
 }

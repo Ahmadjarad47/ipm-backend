@@ -106,7 +106,7 @@ internal sealed class SetProjectMembersCommandHandler(
             if (refs.Count > 0)
             {
                 var name = names.GetValueOrDefault(userId, "—");
-                warnings.Add(new MemberWarning(userId, name, refs, $"«{name}» ما زال مكلّفاً بـ {refs.Count} عنصر عمل مفتوح. لم يتغيّر شيء عليها، وأعد تكليفها عند اللزوم."));
+                warnings.Add(new MemberWarning(userId, name, refs, $"«{name}» ما زال مكلّفاً بـ {refs.Count} عمل مفتوح. لم يتغيّر شيء عليها، وأعد تكليفها عند اللزوم."));
             }
         }
 

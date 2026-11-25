@@ -13,5 +13,5 @@ internal sealed class GetStatusImpactEndpoint : IEndpoint
             .RequireAuthorization(Permissions.StatusesManage)
             .WithTags(ConfigTags.Statuses)
             .WithSummary("معاينة أثر تغيير الحالة (قراءة فقط)")
-            .WithDescription("عدد العناصر والمشاريع وسير العمل اللي فيها الحالة، وسير العمل اللي هي ابتدائية فيها. للاطلاع قبل التعطيل أو الإزالة.");
+            .WithDescription("عدد الأعمال والمشاريع وسير العمل اللي فيها الحالة، وسير العمل اللي هي ابتدائية فيها. للاطلاع قبل التعطيل أو الإزالة.");
 }

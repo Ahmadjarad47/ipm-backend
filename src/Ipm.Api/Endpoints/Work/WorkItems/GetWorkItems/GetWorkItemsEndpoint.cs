@@ -40,6 +40,6 @@ internal sealed class GetWorkItemsEndpoint : IEndpoint
                         createdFrom, createdTo, dueFrom, dueTo, sort, desc, new PageRequest(page, pageSize)), ct))
                     .ToHttpResult())
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("عناصر العمل بالمشاريع التي تراها مع الفلاتر والترقيم")
+            .WithSummary("الأعمال بالمشاريع التي تراها مع الفلاتر والترقيم")
             .WithDescription("typeId وstatusId وpriority وassigneeId تقبل أكثر من قيمة مفصولة بفواصل (أي واحدة منها). q بالرقم المرجعي أو العنوان. overdue=true للمتأخر (استحقاق قبل اليوم وغير منجز أو ملغى). assigneeId للمكلّف، unassigned للبدون مسؤول. sort: ref title priority dueDate status type createdAt، و desc=true للتنازلي. المؤرشف مخفي إلا مع includeArchived=true. pageSize حتى 200.");
 }

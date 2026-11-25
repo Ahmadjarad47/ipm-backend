@@ -10,6 +10,6 @@ internal sealed class GetWorkItemRelationsEndpoint : IEndpoint
         app.MapGet("work-items/{id:guid}/relations", async (Guid id, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetWorkItemRelationsQuery(id), ct)).ToHttpResult())
             .WithTags(WorkTags.Relations)
-            .WithSummary("روابط عنصر من الجهتين")
-            .WithDescription("بصلاحية workitem.relations.view. كل رابط باسمه من جهة هالعنصر (الاسم للصادر والاسم العكسي للوارد) والعنصر الثاني. الرابط اللي طرفه الثاني ما بتشوفه ما بيظهر.");
+            .WithSummary("روابط عمل من الجهتين")
+            .WithDescription("بصلاحية workitem.relations.view. كل رابط باسمه من جهة هالعمل (الاسم للصادر والاسم العكسي للوارد) والعمل الثاني. الرابط اللي طرفه الثاني ما بتشوفه ما بيظهر.");
 }

@@ -46,7 +46,7 @@ public static class GitErrors
     public static readonly Error AlreadyLinked = Error.Conflict("Git.AlreadyLinked", "مرتبط مسبقاً.");
 
     /// <summary>R11.</summary>
-    public static readonly Error LinkedItemNotFound = Error.NotFound("Git.LinkedItemNotFound", "لا يوجد عنصر بهذا الرمز في هذا المشروع.");
+    public static readonly Error LinkedItemNotFound = Error.NotFound("Git.LinkedItemNotFound", "لا يوجد عمل بهذا الرمز في هذا المشروع.");
 
     /// <summary>R12.</summary>
     public static readonly Error ProjectRequired = Error.Validation("Git.ProjectRequired", "حدّد مشروعاً واحداً.");

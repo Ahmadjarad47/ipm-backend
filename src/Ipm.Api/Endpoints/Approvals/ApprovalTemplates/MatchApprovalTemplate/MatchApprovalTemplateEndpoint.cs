@@ -15,6 +15,6 @@ internal sealed class MatchApprovalTemplateEndpoint : IEndpoint
                 return result is { IsSuccess: true, Value: null } ? Results.Content("null", "application/json") : result.ToHttpResult();
             })
             .WithTags(ApprovalsTags.Templates)
-            .WithSummary("القالب الذي يحكم إجراءً على عنصر")
+            .WithSummary("القالب الذي يحكم إجراءً على عمل")
             .WithDescription("subjectType: project أو work-item. action: close أو reopen أو change أو activate. الأعلى rule.priority ثم الأكثر تحديداً ثم الأقدم. بيرجّع null إذا ما في قالب فعّال بينطبق.");
 }

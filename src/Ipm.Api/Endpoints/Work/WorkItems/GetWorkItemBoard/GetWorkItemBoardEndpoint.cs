@@ -11,5 +11,5 @@ internal sealed class GetWorkItemBoardEndpoint : IEndpoint
                 (await sender.Send(new GetWorkItemBoardQuery(projectId), ct)).ToHttpResult())
             .WithTags(WorkTags.WorkItems)
             .WithSummary("لوحة الكانبان للمشروع")
-            .WithDescription("كل العناصر غير المؤرشفة بشكل خفيف، مع سير العمل الفعلي لكل نوع بالمشروع، والحقول المعلَّمة showOnCard فقط. بصلاحية tasks.view.");
+            .WithDescription("كل الأعمال غير المؤرشفة بشكل خفيف، مع سير العمل الفعلي لكل نوع بالمشروع، والحقول المعلَّمة showOnCard فقط. بصلاحية tasks.view.");
 }

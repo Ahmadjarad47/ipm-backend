@@ -17,6 +17,6 @@ internal sealed class ReopenWorkItemEndpoint : IEndpoint
                 return (await sender.Send(new ReopenWorkItemCommand(id, r.ToStatusId, r.Comment, version), ct)).ToETagResult(http.Response, i => i.Version);
             })
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("إعادة فتح عنصر منجز أو ملغى (If-Match)")
+            .WithSummary("إعادة فتح عمل منجز أو ملغى (If-Match)")
             .WithDescription("السبب (comment) إلزامي. بيروح لأول حالة مفتوحة يسمح فيها سير العمل، أو للحالة المحددة بـ toStatusId.");
 }

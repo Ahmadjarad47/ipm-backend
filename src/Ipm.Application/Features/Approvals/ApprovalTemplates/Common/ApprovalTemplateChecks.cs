@@ -72,7 +72,7 @@ internal static class ApprovalTemplateChecks
         if (rule?.WorkItemTypeIds is { Count: > 0 } types
             && await db.WorkItemTypes.AsNoTracking().CountAsync(t => types.Contains(t.Id), cancellationToken) != types.Distinct().Count())
         {
-            problems.Add(("rule.workItemTypeIds", "نوع عنصر عمل غير معروف في القاعدة."));
+            problems.Add(("rule.workItemTypeIds", "نوع عمل غير معروف في القاعدة."));
         }
 
         return problems;

@@ -21,5 +21,5 @@ internal sealed class SetProjectWorkflowOverridesEndpoint : IEndpoint
             })
             .WithTags(ProjectsTags.Projects)
             .WithSummary("استثناءات سير العمل بالمشروع (If-Match)")
-            .WithDescription("بصلاحية project.workitemtypes.configure داخل المشروع. { overrides: { typeId: workflowId } } هي القائمة الكاملة. سير عمل لعناصر العمل فقط، وإذا هو سير عمل النوع نفسه بيتشال الاستثناء.");
+            .WithDescription("بصلاحية project.workitemtypes.configure داخل المشروع. { overrides: { typeId: workflowId } } هي القائمة الكاملة. سير عمل للأعمال فقط، وإذا هو سير عمل النوع نفسه بيتشال الاستثناء.");
 }

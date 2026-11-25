@@ -15,6 +15,6 @@ internal sealed class CreateWorkItemEndpoint : IEndpoint
                         r.AssigneeIds ?? [], r.ParentId, r.Fields), ct))
                     .ToCreatedETagResult(response, i => i.Version, i => $"/api/v1/work-items/{i.Id}"))
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("إنشاء عنصر عمل")
+            .WithSummary("إنشاء عمل")
             .WithDescription("بصلاحية tasks.create داخل المشروع (و tasks.assign إذا فيه مسؤولين). الحالة دايماً الابتدائية لسير العمل، والرقم التالي من 101 (ERP-101). النوع لازم يكون مفعّلاً ومسموحاً بالمشروع، والحقول المخصصة بتتحقق بتعريف النوع.");
 }

@@ -10,6 +10,6 @@ internal sealed class GetWorkItemByIdEndpoint : IEndpoint
         app.MapGet("work-items/{id:guid}", async (Guid id, ISender sender, HttpResponse response, CancellationToken ct) =>
                 (await sender.Send(new GetWorkItemByIdQuery(id), ct)).ToETagResult(response, i => i.Version))
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("عنصر عمل واحد (ETag)")
-            .WithDescription("بصلاحية tasks.view داخل المشروع. عنصر بمشروع ما بتراه بيرجّع 404.");
+            .WithSummary("عمل واحد (ETag)")
+            .WithDescription("بصلاحية tasks.view داخل المشروع. عمل بمشروع ما بتراه بيرجّع 404.");
 }

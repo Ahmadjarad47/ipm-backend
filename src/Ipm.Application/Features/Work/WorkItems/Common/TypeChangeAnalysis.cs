@@ -28,7 +28,7 @@ internal static class TypeChangeAnalysis
         }
         else if (!workflow.StatusIds.Contains(item.StatusId))
         {
-            conflicts.Add(new TypeChangeConflict("statusId", "حالة العنصر الحالية غير موجودة في سير عمل النوع المطلوب."));
+            conflicts.Add(new TypeChangeConflict("statusId", "حالة العمل الحالية غير موجودة في سير عمل النوع المطلوب."));
         }
 
         // Custom fields: required ones missing, values that no longer fit, and values that would be dropped.

@@ -124,7 +124,7 @@ public sealed class ProbeEndpoints : IEndpoint
         }
     }
 
-    private static IResult NotFound() => Error.NotFound("Probe.NotFound", "العنصر غير موجود.").ToProblem();
+    private static IResult NotFound() => Error.NotFound("Probe.NotFound", "العمل غير موجود.").ToProblem();
 
     private static ProbeResponse ToResponse(ProbeItem item) => new(item.Id, item.Name, item.Version);
 }

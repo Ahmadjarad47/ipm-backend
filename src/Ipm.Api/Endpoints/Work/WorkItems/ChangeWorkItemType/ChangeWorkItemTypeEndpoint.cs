@@ -34,6 +34,6 @@ internal sealed class ChangeWorkItemTypeEndpoint : IEndpoint
                 return Results.Ok(item);
             })
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("تغيير نوع العنصر (If-Match)")
+            .WithSummary("تغيير نوع العمل (If-Match)")
             .WithDescription("بصلاحية workitem.types.manage داخل المشروع. مع أي تعارض ما بيتغيّر شي ويرجّع 422 بقائمة conflicts (field, reason). استخدم type-change/check قبل التنفيذ.");
 }

@@ -11,6 +11,6 @@ internal sealed class CreateRelationEndpoint : IEndpoint
                 (await sender.Send(new CreateRelationCommand(r.SourceId, r.TargetId, r.RelationTypeId, r.SourceVersion, r.TargetVersion), ct))
                     .ToCreatedResult(rel => $"/api/v1/work-items/{rel.SourceId}/relations"))
             .WithTags(WorkTags.Relations)
-            .WithSummary("ربط عنصرين")
+            .WithSummary("ربط عملين")
             .WithDescription("بصلاحية workitem.relations.create بمشروع المصدر. نوع الرابط مفعّل وبيسمح بزوج الأنواع، بدون تكرار (ولا عكسه) وبدون حلقة إذا النوع acyclic. الروابط بين المشاريع مرفوضة حالياً. sourceVersion و targetVersion اختياريان لفحص التزامن (412).");
 }

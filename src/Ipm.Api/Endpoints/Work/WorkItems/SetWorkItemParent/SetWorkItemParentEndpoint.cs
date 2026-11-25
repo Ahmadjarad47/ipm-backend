@@ -18,5 +18,5 @@ internal sealed class SetWorkItemParentEndpoint : IEndpoint
             })
             .WithTags(WorkTags.WorkItems)
             .WithSummary("تغيير الأب (If-Match)")
-            .WithDescription("بصلاحية tasks.edit. الأب من نفس المشروع ونوعه بيسمح بنوع العنصر ابناً، وبدون حلقة. parentId = null بيشيل الأب.");
+            .WithDescription("بصلاحية tasks.edit. الأب من نفس المشروع ونوعه بيسمح بنوع العمل ابناً، وبدون حلقة. parentId = null بيشيل الأب.");
 }

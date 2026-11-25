@@ -13,13 +13,13 @@ public static class RelationErrors
     public static readonly Error TypeInactive = Error.Failure("Relation.TypeInactive", "نوع الرابط معطّل.");
 
     /// <summary>R1.</summary>
-    public static readonly Error SelfLink = Error.Failure("Relation.SelfLink", "لا يمكن ربط العنصر بنفسه.");
+    public static readonly Error SelfLink = Error.Failure("Relation.SelfLink", "لا يمكن ربط العمل بنفسه.");
 
     /// <summary>R1.</summary>
-    public static readonly Error ItemArchived = Error.Failure("Relation.ItemArchived", "أحد العنصرين مؤرشف ولا يقبل روابط جديدة.");
+    public static readonly Error ItemArchived = Error.Failure("Relation.ItemArchived", "أحد العملين مؤرشف ولا يقبل روابط جديدة.");
 
     /// <summary>R2, R7.</summary>
-    public static readonly Error ProjectArchived = Error.Failure("Relation.ProjectArchived", "المشروع مؤرشف ولا تُعدَّل روابط عناصره.");
+    public static readonly Error ProjectArchived = Error.Failure("Relation.ProjectArchived", "المشروع مؤرشف ولا تُعدَّل روابط أعماله.");
 
     /// <summary>R2.</summary>
     public static readonly Error CrossProjectNotAllowed = Error.Failure(

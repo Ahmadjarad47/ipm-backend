@@ -48,7 +48,7 @@ public static class GitRefPatterns
 
         if (regex.GetGroupNumbers().Length - 1 != 1)
         {
-            return "يجب أن يحتوي النمط على مجموعة التقاط واحدة بالضبط تلتقط رمز العنصر.";
+            return "يجب أن يحتوي النمط على مجموعة التقاط واحدة بالضبط تلتقط رمز العمل.";
         }
 
         foreach (var reference in sampleRefs)
@@ -56,7 +56,7 @@ public static class GitRefPatterns
             string[] forms = [reference, $"[{reference}]", $"({reference})", $"#{reference}", $"feature/{reference}", $"{reference}: وصف"];
             if (!forms.Any(text => Matches(regex, text).Contains(reference)))
             {
-                return $"النمط لا يلتقط رمز عنصر المشروع «{reference}».";
+                return $"النمط لا يلتقط رمز عمل المشروع «{reference}».";
             }
         }
 

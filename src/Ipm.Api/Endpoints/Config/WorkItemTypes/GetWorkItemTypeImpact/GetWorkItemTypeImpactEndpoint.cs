@@ -13,5 +13,5 @@ internal sealed class GetWorkItemTypeImpactEndpoint : IEndpoint
             .RequireAuthorization(Permissions.WorkItemTypesManage)
             .WithTags(ConfigTags.WorkItemTypes)
             .WithSummary("معاينة أثر تغيير النوع (قراءة فقط)")
-            .WithDescription("عدد العناصر والمشاريع المسموح فيها وسير العمل المستعملة، والمشاريع اللي النوع افتراضي فيها. للاطلاع قبل التعطيل أو تغيير الربط.");
+            .WithDescription("عدد الأعمال والمشاريع المسموح فيها وسير العمل المستعملة، والمشاريع اللي النوع افتراضي فيها. للاطلاع قبل التعطيل أو تغيير الربط.");
 }

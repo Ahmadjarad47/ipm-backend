@@ -29,7 +29,7 @@ internal sealed class ClosedXmlWorkReportWriter : IWorkReportWriter
         workbook.Style.Font.FontColor = Ink;
         workbook.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         WriteSummary(workbook.Worksheets.Add("الملخص"), report);
-        WriteItems(workbook.Worksheets.Add("عناصر العمل"), report);
+        WriteItems(workbook.Worksheets.Add("الأعمال"), report);
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -84,7 +84,7 @@ internal sealed class ClosedXmlWorkReportWriter : IWorkReportWriter
 
         sheet.Row(5).Height = 14;
 
-        string[] headers = ["الرمز", "المشروع", "عناصر تأثّرت بالفترة", "جديدة", "أُنجزت", "مفتوحة الآن", "متأخرة الآن"];
+        string[] headers = ["الرمز", "المشروع", "أعمال تأثّرت بالفترة", "جديدة", "أُنجزت", "مفتوحة الآن", "متأخرة الآن"];
         Header(sheet, 6, headers);
         var row = 7;
         foreach (var p in report.Projects)

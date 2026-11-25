@@ -21,6 +21,6 @@ internal sealed class UpdateWorkItemEndpoint : IEndpoint
                     .ToETagResult(http.Response, i => i.Version);
             })
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("تعديل عنصر عمل (If-Match)")
+            .WithSummary("تعديل عمل (If-Match)")
             .WithDescription("العنوان والوصف والأولوية والتواريخ والمسؤولون والحقول. تعديل غير المسؤولين بصلاحية tasks.edit، وتغيير المسؤولين بصلاحية tasks.assign. الحالة والنوع والأب لها عمليات خاصة، وإرسالها مختلفة هون بيرجّع 422.");
 }

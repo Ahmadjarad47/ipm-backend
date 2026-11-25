@@ -10,6 +10,6 @@ internal sealed class BulkUpdateWorkItemsEndpoint : IEndpoint
         app.MapPost("work-items/bulk", async (BulkUpdateWorkItemsRequest r, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new BulkUpdateWorkItemsCommand(r.Ids ?? [], r.Action), ct)).ToHttpResult())
             .WithTags(WorkTags.WorkItems)
-            .WithSummary("تعديل جماعي لعناصر العمل (حتى 100)")
-            .WithDescription("action.kind: assign (assigneeIds) أو priority (priority) أو dueDate (dueDate) أو transition (toStatusId, comment). كل عنصر بيتفحص بقواعده وصلاحياته لحاله، والرد نتيجة لكل عنصر، وعنصر مرفوض ما بيوقف الباقي.");
+            .WithSummary("تعديل جماعي للأعمال (حتى 100)")
+            .WithDescription("action.kind: assign (assigneeIds) أو priority (priority) أو dueDate (dueDate) أو transition (toStatusId, comment). كل عمل بيتفحص بقواعده وصلاحياته لحاله، والرد نتيجة لكل عمل، وعمل مرفوض ما بيوقف الباقي.");
 }
