@@ -17,6 +17,9 @@ public static class NotificationKinds
     public const string ApprovalDelegated = "approval.delegated";
     public const string GitPrMerged = "git.pr-merged";
 
+    /// <summary>Spec 11 R6: the kinds that also go to Telegram. Adding a kind here is all it takes to send more.</summary>
+    public static readonly IReadOnlySet<string> TelegramDefault = new HashSet<string> { WorkItemAssigned };
+
     public static readonly IReadOnlyList<string> All =
     [
         WorkItemAssigned, WorkItemUnassigned, WorkItemStatusChanged, ProjectMemberAdded, ProjectMemberRemoved, ProjectStatusChanged,

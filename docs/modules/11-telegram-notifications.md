@@ -26,6 +26,7 @@
 | `notification_id` | **فريد**: رسالة وحدة لكل إشعار (عدم التكرار) |
 | `user_id` · `chat_id` | |
 | `text` (≤4096) | HTML جاهز (النص كله مهروب) |
+| `url?` (≤500) | الرابط المطلق للتطبيق (لزر inline لما يكون https) |
 | `status` | `pending` / `sent` / `failed` / `expired` (نص kebab) |
 | `attempts` · `next_attempt_at` · `last_error?` | `last_error` ≤500 وبدون أي توكن |
 | `created_at` · `sent_at?` | فهرس `(status, next_attempt_at)` |
