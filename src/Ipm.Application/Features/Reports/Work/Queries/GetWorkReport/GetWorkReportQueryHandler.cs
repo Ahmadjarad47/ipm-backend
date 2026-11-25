@@ -132,7 +132,7 @@ internal sealed class GetWorkReportQueryHandler(IApplicationDbContext db, IUserC
 
         if (lines.Count > MaxRows)
         {
-            return Error.Failure("Report.TooLarge", $"النتيجة {lines.Count} عملاً وتتجاوز الحد ({MaxRows}). ضيّق الفترة أو اختر مشاريع أقل.");
+            return Error.Failure("Report.TooLarge", $"النتيجة {lines.Count} من الأعمال وتتجاوز الحد ({MaxRows}). ضيّق الفترة أو اختر مشاريع أقل.");
         }
 
         var summaries = projects

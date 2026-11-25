@@ -113,7 +113,7 @@ public static class WorkItemErrors
     public static readonly Error BulkEmpty = Error.Validation("Bulk.Empty", "حدّد عملاً واحداً على الأقل.");
 
     /// <summary>R12.</summary>
-    public static readonly Error BulkTooMany = Error.Validation("Bulk.TooMany", "الحد الأقصى 100 عمل في العملية الواحدة.");
+    public static readonly Error BulkTooMany = Error.Validation("Bulk.TooMany", "الحد الأقصى 100 من الأعمال في العملية الواحدة.");
 
     /// <summary>R12.</summary>
     public static readonly Error BulkInvalid = Error.Validation("Bulk.Invalid", "إجراء التعديل الجماعي غير صالح.");
