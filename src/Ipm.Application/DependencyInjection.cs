@@ -35,6 +35,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAccessService, AccessService>();
         services.AddScoped<Features.Activity.Notifications.Common.NotificationEmitter>();
+        services.AddScoped<Features.Activity.Telegram.Common.TelegramUpdateProcessor>();
 
         return services;
     }
