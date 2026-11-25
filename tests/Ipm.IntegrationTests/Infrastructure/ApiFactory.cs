@@ -37,6 +37,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     /// <summary>The fake Git server every sync talks to.</summary>
     public FakeGitRemote GitRemote { get; } = new();
 
+    /// <summary>The fake Telegram Bot API (spec 11): what the dispatcher sent, and the answers the next sends get.</summary>
+    public FakeTelegramBot TelegramBot { get; } = new();
+
+    public const string TelegramWebhookSecret = "test-webhook-secret";
+
     public string DatabaseConnectionString => _postgres.GetConnectionString();
 
     /// <summary>A second, empty database on the same server, for migration tests.</summary>
@@ -103,6 +108,15 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("Jwt:SigningKey", "integration-tests-signing-key-0123456789-abcdef");
         builder.UseSetting("RateLimiting:AuthPerMinute", "1000");
         builder.UseSetting("Git:SecretKey", "dGVzdHMtZ2l0LXNlY3JldC1rZXktMDEyMzQ1Njc4OWE=");
+        builder.UseSetting("Telegram:Enabled", "true");
+        builder.UseSetting("Telegram:BotToken", "123456:integration-test-token");
+        builder.UseSetting("Telegram:BotUsername", "ipm_test_bot");
+        builder.UseSetting("Telegram:Mode", "Webhook");
+        builder.UseSetting("Telegram:WebhookUrl", "https://ipm.example/api/v1/telegram/webhook");
+        builder.UseSetting("Telegram:WebhookSecret", TelegramWebhookSecret);
+        builder.UseSetting("Telegram:AppBaseUrl", "https://ipm.example");
+        // The tests run the dispatcher by hand, so nothing sends in the background.
+        builder.UseSetting("Telegram:BackgroundServices", "false");
 
         builder.ConfigureServices(services =>
         {
@@ -113,6 +127,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddScoped<Ipm.Application.Abstractions.Events.IDomainEventHandler<Ipm.Domain.Activity.Events.WorkItemStatusChanged>, FailingStatusHandler>();
             services.AddSingleton(GitRemote);
             services.AddSingleton<Ipm.Application.Abstractions.Git.IGitRemote>(GitRemote);
+            services.RemoveAll<Ipm.Application.Abstractions.Telegram.ITelegramBot>();
+            services.AddSingleton<Ipm.Application.Abstractions.Telegram.ITelegramBot>(TelegramBot);
         });
     }
 }

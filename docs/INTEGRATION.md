@@ -48,6 +48,7 @@
 | `transitions/by-subject` | `GET work-items/:id/status-history`، `projects/:id/status-history` | تغيير |
 | `approvals`، `approval-templates`، `delegations` | نفسها + `remind/resubmit/bulk-decide/match` | قريب |
 | `notifications/all` | `GET notifications` (+ `unread-count`، `PATCH :id/read`، `read-all`) | تغيير |
+| (جديد، الجزء 11) ربط تلغرام من الملف الشخصي | `GET/POST/DELETE telegram/link` (حالة، بدء ربط ← `{ deepLink, expiresAt }`، فك). و`POST telegram/webhook` لتلغرام نفسه (بدون تسجيل دخول، ترويسة سرّية) | جديد؛ الميزة معطّلة افتراضياً (`enabled=false`) |
 | `audit` + `audit/verify` + `audit/export` (JSON) | نفسها؛ التصدير CSV | تصدير = تنزيل ملف |
 | `dashboard/stats`، `search` | نفسها (`work-item`/kebab) | تعداد |
 | `settings` GET/PATCH(version) | `GET/PATCH settings` (`If-Match`) | `version`→ترويسة |

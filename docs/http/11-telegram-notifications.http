@@ -1,0 +1,45 @@
+### الجزء 11: إشعارات تلغرام
+### يشتغل مباشرة من VS Code (REST Client) أو Rider أو Visual Studio.
+### شغّل أول طلب (login) وبعدها كل الطلبات بتاخد التوكن لحالها. حساب التطوير: admin / Admin12345
+### لتفعيل الميزة: ضع TELEGRAM_BOT_TOKEN وTELEGRAM_BOT_USERNAME بملف .env (انظر .env.example) وشغّل docker compose up -d --build.
+### بدون توكن: GET بيرجّع enabled=false وPOST بيرجّع 422 Telegram.Disabled.
+
+@host = http://localhost:8080
+@api = {{host}}/api/v1
+
+### تسجيل الدخول
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin12345" }
+
+###
+@token = {{login.response.body.accessToken}}
+
+### حالة الربط: { enabled, botUsername, linked, telegramUsername, linkedAt }
+GET {{api}}/telegram/link
+Authorization: Bearer {{token}}
+
+### بدء الربط: بدون جسم ← { deepLink, expiresAt }. افتح deepLink بتلغرام واضغط Start (صالح 10 دقائق، لمرة وحدة)
+POST {{api}}/telegram/link
+Authorization: Bearer {{token}}
+
+### فك الربط (204 دايماً، حتى لو ما في ربط). ممكن كمان من تلغرام بأمر /stop
+DELETE {{api}}/telegram/link
+Authorization: Bearer {{token}}
+
+### Webhook (لتلغرام نفسه، بدون تسجيل دخول). الترويسة لازم تطابق Telegram__WebhookSecret وإلا 401. بوضع Polling ما بيُستعمل
+POST {{api}}/telegram/webhook
+Content-Type: application/json
+X-Telegram-Bot-Api-Secret-Token: change-me
+
+{
+  "update_id": 1,
+  "message": {
+    "message_id": 1,
+    "from": { "id": 1000001, "username": "demo_user" },
+    "chat": { "id": 1000001, "type": "private" },
+    "text": "/start PASTE_TOKEN_HERE"
+  }
+}

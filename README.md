@@ -41,6 +41,29 @@ dotnet run --project src/Ipm.Api        # http://localhost:5150
 **Development accounts** (seed data, dev only): `admin` / `Admin12345`; `khaled`, `noura`, `fahad`, `reem`, `abdullah` / `Demo12345`.
 Demo projects: `ERP`, `SSP`, `BI`, `MAIL` (archived). Production uses environment variables, never these credentials.
 
+## Configuration
+
+### Telegram notifications (optional)
+
+Users link their Telegram from their profile; work items assigned to them then arrive in a private chat with the bot ([spec 11](docs/modules/11-telegram-notifications.md)).
+Off by default; without a token the system runs exactly as before.
+
+1. Create a bot with [@BotFather](https://t.me/BotFather).
+2. Copy `.env.example` to `.env` (git ignores it) and fill in `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`; `docker compose up -d --build` reads them.
+3. Or set the `Telegram` section directly (environment variables use `__`):
+
+| Setting | Meaning |
+|---|---|
+| `Telegram:Enabled` | `true` to turn the feature on. Enabled with an empty token behaves as disabled |
+| `Telegram:BotToken` / `Telegram:BotUsername` | from BotFather (the token is a secret: environment or secret store only, never a committed file) |
+| `Telegram:Mode` | `Polling` (default, no public address needed: development) or `Webhook` (production) |
+| `Telegram:WebhookUrl` / `Telegram:WebhookSecret` | Webhook mode: the public https address of `/api/v1/telegram/webhook`, and a secret of 1-256 characters (`A-Za-z0-9_-`) that Telegram sends back in `X-Telegram-Bot-Api-Secret-Token` |
+| `Telegram:AppBaseUrl` | where the web app lives; used for the link in each message (an inline button is added only for https) |
+| `Telegram:MessagesPerSecond` | global send cap, default 25 (Telegram allows about 30); each chat gets at most one message per second |
+
+Messages are queued in an outbox in the same transaction as the notification and sent by a background worker, with retries (5 s doubling to 10 min, 8 attempts) and `retry_after` handling.
+The token is part of every Bot API URL, so that HTTP client has no logging.
+
 ## Build & test
 
 ```powershell
@@ -94,6 +117,8 @@ Cross-cutting conventions:
 | 08 | Activity, audit & notifications | [08-activity-audit-notifications](docs/modules/08-activity-audit-notifications.md) |
 | 09 | Dashboard, search & settings | [09-dashboard-search-settings](docs/modules/09-dashboard-search-settings.md) |
 | 10 | Reports | [10-reports](docs/modules/10-reports.md) |
+
+| 11 | Telegram notifications | [11-telegram-notifications](docs/modules/11-telegram-notifications.md) |
 
 Attachments are out of scope for the first release (owner decision): the `files.*` permissions and attachment settings exist and are stored, but upload/download is not implemented.
 
