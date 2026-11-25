@@ -7,6 +7,7 @@ using Ipm.Application.Abstractions.Realtime;
 using Ipm.Application.Abstractions.Security;
 using Ipm.Infrastructure.Git;
 using Ipm.Infrastructure.Security;
+using Ipm.Infrastructure.Telegram;
 using Ipm.Infrastructure.Authentication;
 using Ipm.Infrastructure.Caching;
 using Ipm.Infrastructure.Events;
@@ -42,6 +43,8 @@ public static class DependencyInjection
         services.AddSingleton<ISecretProtector, AesGcmSecretProtector>();
         services.AddHttpClient<IGitRemote, GitRemote>((sp, client) =>
             client.Timeout = TimeSpan.FromSeconds(sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<GitOptions>>().Value.RemoteTimeoutSeconds));
+
+        services.AddTelegram(configuration);
 
         services.AddStackExchangeRedisCache(options =>
         {

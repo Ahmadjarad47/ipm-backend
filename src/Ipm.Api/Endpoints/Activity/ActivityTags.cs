@@ -6,4 +6,5 @@ internal static class ActivityTags
     public const string Audit = "التدقيق";
     public const string Activity = "النشاط";
     public const string Notifications = "الإشعارات";
+    public const string Telegram = "تلغرام";
 }

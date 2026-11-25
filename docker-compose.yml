@@ -50,6 +50,12 @@ services:
       OpenApi__Enabled: "true"
       # Real data only: no demo users, projects or notifications (set to "true" for a demo database).
       Seed__Demo: "false"
+      # Telegram notifications (spec 11). The token and bot name come from .env (see .env.example); without a token the feature simply stays off.
+      Telegram__Enabled: "true"
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
+      Telegram__BotUsername: ${TELEGRAM_BOT_USERNAME:-}
+      Telegram__Mode: Polling
+      Telegram__AppBaseUrl: http://localhost:8000
     ports: ["8080:8080"]
     depends_on:
       postgres: { condition: service_healthy }
