@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ipm.Application.Abstractions.Data;
 using Ipm.Domain.Config;
 using Ipm.Domain.Projects;
@@ -9,8 +10,24 @@ namespace Ipm.Application.Features.Work.WorkItems.Common;
 /// <summary>R10: everything that stops an item from becoming another type, all at once, so nothing is lost silently.</summary>
 internal static class TypeChangeAnalysis
 {
-    public static async Task<IReadOnlyList<TypeChangeConflict>> ConflictsAsync(
+    public static Task<IReadOnlyList<TypeChangeConflict>> ConflictsAsync(
         IApplicationDbContext db, Project project, WorkItem item, Guid newTypeId, CancellationToken cancellationToken)
+        => ConflictsAsync(db, project, item, newTypeId, null, cancellationToken);
+
+    /// <summary>The item values with <paramref name="extra"/> laid over them (a null or empty value clears the key).</summary>
+    public static IReadOnlyDictionary<string, JsonElement> Merge(IReadOnlyDictionary<string, JsonElement> current, IReadOnlyDictionary<string, JsonElement>? extra)
+    {
+        var merged = new Dictionary<string, JsonElement>(current, StringComparer.Ordinal);
+        foreach (var (key, value) in extra ?? new Dictionary<string, JsonElement>())
+        {
+            merged[key] = value;
+        }
+
+        return WorkItemFieldValues.Normalize(merged);
+    }
+
+    public static async Task<IReadOnlyList<TypeChangeConflict>> ConflictsAsync(
+        IApplicationDbContext db, Project project, WorkItem item, Guid newTypeId, IReadOnlyDictionary<string, JsonElement>? extraFields, CancellationToken cancellationToken)
     {
         var newType = await db.WorkItemTypes.AsNoTracking().SingleOrDefaultAsync(t => t.Id == newTypeId, cancellationToken);
         if (newType is not { IsActive: true } || !project.AllowedTypeIds.Contains(newType.Id))
@@ -32,7 +49,7 @@ internal static class TypeChangeAnalysis
         }
 
         // Custom fields: required ones missing, values that no longer fit, and values that would be dropped.
-        foreach (var (path, message) in WorkItemFieldValues.Validate(newType.Fields, item.Fields))
+        foreach (var (path, message) in WorkItemFieldValues.Validate(newType.Fields, Merge(item.Fields, extraFields)))
         {
             conflicts.Add(new TypeChangeConflict(path, message));
         }

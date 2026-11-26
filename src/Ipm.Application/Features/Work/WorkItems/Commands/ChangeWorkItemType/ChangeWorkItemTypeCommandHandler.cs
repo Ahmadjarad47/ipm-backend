@@ -39,7 +39,7 @@ internal sealed class ChangeWorkItemTypeCommandHandler(
             return WorkItemErrors.ProjectArchived;
         }
 
-        var conflicts = await TypeChangeAnalysis.ConflictsAsync(db, project, item, command.TypeId, cancellationToken);
+        var conflicts = await TypeChangeAnalysis.ConflictsAsync(db, project, item, command.TypeId, command.Fields, cancellationToken);
         if (conflicts.Count > 0)
         {
             return new TypeChangeResponse(null, conflicts);
@@ -51,7 +51,7 @@ internal sealed class ChangeWorkItemTypeCommandHandler(
             return direct.Error;
         }
 
-        item.ChangeType(command.TypeId, item.Fields);
+        item.ChangeType(command.TypeId, TypeChangeAnalysis.Merge(item.Fields, command.Fields));
         await ApprovalSupersession.SupersedeAsync(db, ApprovalSubjectType.WorkItem, item.Id, ["typeId"], cancellationToken); // R11 of part 06
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return new TypeChangeResponse(item.ToResponse(), []);

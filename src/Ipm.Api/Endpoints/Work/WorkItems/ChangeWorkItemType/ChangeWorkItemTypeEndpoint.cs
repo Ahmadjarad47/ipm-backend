@@ -15,7 +15,7 @@ internal sealed class ChangeWorkItemTypeEndpoint : IEndpoint
                     return problem!;
                 }
 
-                var result = await sender.Send(new ChangeWorkItemTypeCommand(id, r.TypeId, version), ct);
+                var result = await sender.Send(new ChangeWorkItemTypeCommand(id, r.TypeId, version, r.Fields), ct);
                 if (result.IsFailure)
                 {
                     return result.Error.ToProblem();

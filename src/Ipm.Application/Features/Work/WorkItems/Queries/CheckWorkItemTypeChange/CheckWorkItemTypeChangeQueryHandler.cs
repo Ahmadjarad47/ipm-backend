@@ -18,7 +18,7 @@ internal sealed class CheckWorkItemTypeChangeQueryHandler(IApplicationDbContext 
             return guarded.Error;
         }
 
-        var conflicts = await TypeChangeAnalysis.ConflictsAsync(db, guarded.Value.Project, guarded.Value.Item, query.TypeId, cancellationToken);
+        var conflicts = await TypeChangeAnalysis.ConflictsAsync(db, guarded.Value.Project, guarded.Value.Item, query.TypeId, query.Fields, cancellationToken);
         return new TypeChangeCheckResponse(conflicts);
     }
 }

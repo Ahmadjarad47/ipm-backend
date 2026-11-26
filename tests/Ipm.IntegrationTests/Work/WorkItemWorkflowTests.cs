@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Net;
 using System.Net.Http.Json;
 using Ipm.Domain.Identity;
@@ -193,6 +194,36 @@ public sealed class WorkItemWorkflowTests(ApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
         Assert.NotEqual(plainEtag, changed.Headers.ETag);
         Assert.Equal(subtask, (await ReadAsync(changed)).GetProperty("typeId").GetGuid());
+    }
+
+    [Fact]
+    public async Task Scenario_12b_a_type_change_accepts_the_missing_required_values_and_keeps_them()
+    {
+        using var admin = await factory.AdminClientAsync();
+        var (project, _) = await NewProjectAsync(admin);
+        var bug = await TypeIdAsync(admin, "bug");
+        var (task, taskEtag, _) = await CreateAsync(admin, project, "task", "مهمة بدون حقول");
+
+        string[] Conflicts(JsonElement body) => [.. body.GetProperty("conflicts").EnumerateArray().Select(c => c.GetProperty("field").GetString()!)];
+
+        // Without the value the required severity blocks the change.
+        var without = await admin.PostAsJsonAsync(new Uri($"/api/v1/work-items/{task}/type-change/check", UriKind.Relative), new { typeId = bug });
+        Assert.Contains("fields.severity", Conflicts(await ReadAsync(without)));
+
+        // A value that does not fit is still reported; a valid one clears the conflict.
+        var wrong = await admin.PostAsJsonAsync(new Uri($"/api/v1/work-items/{task}/type-change/check", UriKind.Relative), new { typeId = bug, fields = new { severity = "nope" } });
+        Assert.Contains("fields.severity", Conflicts(await ReadAsync(wrong)));
+        var ok = await admin.PostAsJsonAsync(new Uri($"/api/v1/work-items/{task}/type-change/check", UriKind.Relative), new { typeId = bug, fields = new { severity = "major" } });
+        Assert.Empty(Conflicts(await ReadAsync(ok)));
+
+        // The change itself stores the value with the new type.
+        var refused = await SendAsync(admin, HttpMethod.Post, $"/api/v1/work-items/{task}/type-change", new { typeId = bug, fields = new { severity = "nope" } }, taskEtag);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        var changed = await SendAsync(admin, HttpMethod.Post, $"/api/v1/work-items/{task}/type-change", new { typeId = bug, fields = new { severity = "major" } }, taskEtag);
+        Assert.Equal(HttpStatusCode.OK, changed.StatusCode);
+        var body = await ReadAsync(changed);
+        Assert.Equal(bug, body.GetProperty("typeId").GetGuid());
+        Assert.Equal("major", body.GetProperty("fields").GetProperty("severity").GetString());
     }
 
     [Fact]
