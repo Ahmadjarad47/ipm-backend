@@ -14,7 +14,8 @@ internal static class UserMapping
         user.ManagerId,
         user.RoleIds,
         user.MustChangePassword,
-        user.Version);
+        user.Version,
+        user.LockoutEnd is { } lockedUntil && lockedUntil > DateTimeOffset.UtcNow);
 
     /// <summary>R20: the view for people who may not administer users.</summary>
     public static UserResponse ToDirectoryResponse(this User user) => user.ToResponse() with
@@ -23,5 +24,6 @@ internal static class UserMapping
         ManagerId = null,
         SystemRoleIds = [],
         MustChangePassword = false,
+        IsLockedOut = false,
     };
 }

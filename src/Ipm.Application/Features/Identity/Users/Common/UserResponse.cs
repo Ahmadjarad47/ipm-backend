@@ -14,4 +14,5 @@ public sealed record UserResponse(
     Guid? ManagerId,
     IReadOnlyList<Guid> SystemRoleIds,
     bool MustChangePassword,
-    uint Version);
+    uint Version,
+    bool IsLockedOut = false);

@@ -35,7 +35,7 @@ internal sealed class GetUsersQueryHandler(IApplicationDbContext db) : IQueryHan
             .OrderBy(u => u.Name)
             .Skip(query.Page.Skip)
             .Take(query.Page.Take)
-            .Select(u => new UserListItem(u.Id, u.UserName!, u.Name, u.Email!, u.Title, u.IsActive, u.ManagerId, u.RoleIds))
+            .Select(u => new UserListItem(u.Id, u.UserName!, u.Name, u.Email!, u.Title, u.IsActive, u.ManagerId, u.RoleIds, u.LockoutEnd != null && u.LockoutEnd > DateTimeOffset.UtcNow))
             .ToListAsync(cancellationToken);
 
         return new PagedList<UserListItem>(items, Math.Max(query.Page.Page, 1), query.Page.Take, total);

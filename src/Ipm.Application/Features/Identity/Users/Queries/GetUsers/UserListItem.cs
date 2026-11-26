@@ -8,4 +8,5 @@ public sealed record UserListItem(
     string Title,
     bool IsActive,
     Guid? ManagerId,
-    IReadOnlyList<Guid> SystemRoleIds);
+    IReadOnlyList<Guid> SystemRoleIds,
+    bool IsLockedOut = false);
