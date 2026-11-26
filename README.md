@@ -5,6 +5,19 @@ Built module by module following the [delivery pipeline](docs/MODULE-PIPELINE.md
 
 > Front end: [`ipm-web`](https://github.com/Ahmadjarad47/ipm-web) (Angular 22).
 
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white) ![PostgreSQL 17](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white) ![SignalR](https://img.shields.io/badge/real--time-SignalR-512BD4) ![License: MIT](https://img.shields.io/badge/license-MIT-green)
+
+## The idea
+
+Organisations run their projects across chat threads, spreadsheets and tools that each force a fixed process. **IPM** is one **single source of truth** for projects, tasks, owners and **approval decisions**:
+
+- **Nothing is hard-coded.** Admins define work-item types, custom fields, statuses, transitions, approval chains and roles, globally or per project.
+- **Every decision is accountable.** Each change records who made it, when and who approved it, in an audit log that is hash-chained so tampering can be detected.
+- **Governance built into the workflow.** Status transitions can wait for a multi-stage approval, sensitive edits go through approval, and nobody can approve their own request.
+- **Connected to the code.** Git repositories (GitHub, GitLab, Gitea) link commits and PRs to work items automatically.
+
+The result is an Arabic-first, self-hosted platform in the spirit of OpenProject and Jira, focused on governance and auditability. It exposes **130+ REST endpoints** and is covered by **400+ automated tests**.
+
 **Stack:** .NET 10 · Clean Architecture · CQRS (Mediator) · EF Core + PostgreSQL 17 · Redis 7 · SignalR · FluentValidation · Serilog + Seq · Scalar (OpenAPI).
 
 ## Capabilities
